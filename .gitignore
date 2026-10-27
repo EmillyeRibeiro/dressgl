@@ -1,0 +1,13 @@
+# Ambiente virtual e caches do Python
+.venv/
+__pycache__/
+*.pyc
+.pytest_cache/
+*.egg-info/
+
+# Temporários do Word
+~$*
+*.tmp
+
+# Documento de trabalho (substituído por docs/decisions.md)
+docs/decision.docx

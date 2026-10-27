@@ -1,0 +1,10 @@
+cbor==1.0.0
+colorama==0.4.6
+coppeliasim_zmqremoteapi_client==2.0.4
+iniconfig==2.3.1
+packaging==26.3
+pluggy==1.7.0
+Pygments==2.21.0
+pytest==9.1.1
+pyzmq==27.2.0
+Python 3.11.0

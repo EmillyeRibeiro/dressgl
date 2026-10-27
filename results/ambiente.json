@@ -1,0 +1,14 @@
+{
+  "data_coleta": "2026-10-15T15:36:41",
+  "python_versao": "3.11.0",
+  "python_implementacao": "CPython",
+  "python_executavel": "C:\\Program Files\\Python311\\python.exe",
+  "so": "Windows",
+  "so_release": "10",
+  "so_versao": "10.0.26200",
+  "plataforma": "Windows-10-10.0.26200-SP0",
+  "arquitetura": "AMD64",
+  "processador": "Intel64 Family 6 Model 186 Stepping 2, GenuineIntel",
+  "nucleos_logicos": 16,
+  "cliente_zmq_coppeliasim": "instalado"
+}

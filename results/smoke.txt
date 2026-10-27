@@ -1,0 +1,4 @@
+Conectando ao CoppeliaSim (host/porta padrao do cliente)...
+Conectado. Passo de simulacao configurado na cena: 50.0 ms
+Tempo simulado final: 3.05 s | passos: 61
+Latencia de sim.step(): media=7.58 ms mediana=7.31 ms p95=9.28 ms
