@@ -136,3 +136,10 @@ def test_cenario_invalido(tmp_path, extra):
     arq.write_text(BASE + extra, encoding="utf-8")
     with pytest.raises(ErroCenario):
         carregar_cenario(arq)
+
+def test_scale_resolution_pelo_parser(host):                     # fecha a suposição de D23
+    fonte = ('RULE R GIVEN drone.battery < 18 % WHEN AROUND pass "TerrainPass" '
+             'THEN SCALE resolution "FPV" BY 0.5; END\n')
+    plano, _ = compor(compilar_programa(fonte, carregar(MODELO_PADRAO)).regras)
+    assert plano.escalas == {("resolution", "FPV"): 0.5}
+    assert host.leituras(0, plano)["view:FPV.scale"] == 0.5

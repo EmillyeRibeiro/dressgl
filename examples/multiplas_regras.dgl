@@ -1,0 +1,26 @@
+POLICY AgroViewSC {
+  budget   = 16.67 ms;
+  reserve  =  2.00 ms;
+  cooldown =    10 frames;
+}
+
+RULE SafeSetdownAssist PRIORITY 90
+  GIVEN drone.battery < 18 %
+    AND terrain.below IN { WATER, STANDING_CROP }
+  WHEN  AROUND pass "TerrainPass"
+  THEN  INJECT pass "SuitabilityPass" AFTER "TerrainPass";
+        SET view "MAP".mode = SUITABILITY;
+        HIGHLIGHT ARGMAX terrain.suitability WITHIN 400 m;
+        SET view "AGRO".hz = 2 Hz;
+        SCALE instances "crops" BY 0.25;
+  ASSERT frame_budget <= 16.67 ms
+     AND view "FPV".scale >= 0.75
+END
+
+RULE EconomiaBateria PRIORITY 50
+  GIVEN drone.battery < 25 %
+  WHEN  AROUND pass "TerrainPass"
+  THEN  SET view "MAP".mode = NOMINAL;
+        SET view "AGRO".hz = 1 Hz;
+        SCALE instances "crops" BY 0.5;
+END

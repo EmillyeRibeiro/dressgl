@@ -1,0 +1,30 @@
+# Bateria alternando entre 19 % e 17 % sobre água (D34): exercita o cooldown.
+nome     = "oscilacao"
+quadros  = 150
+semente  = 0
+ruido_ms = 0.0
+
+[[trechos]]
+inicio = 0
+fim    = 149
+"terrain.below" = "WATER"
+
+[[trechos]]
+inicio = 0
+fim    = 149
+"drone.battery" = 19.0
+
+[[trechos]]
+inicio = 50
+fim    = 54
+"drone.battery" = 17.0
+
+[[trechos]]
+inicio = 60
+fim    = 64
+"drone.battery" = 17.0
+
+[[trechos]]
+inicio = 70
+fim    = 149
+"drone.battery" = 17.0

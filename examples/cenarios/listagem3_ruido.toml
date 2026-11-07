@@ -1,0 +1,20 @@
+# Listagem 3 com ruído gaussiano no custo do quadro (D34). Cópia de listagem3.toml.
+nome     = "listagem3_ruido"
+quadros  = 300
+semente  = 42
+ruido_ms = 0.5
+
+[[trechos]]
+inicio = 0
+fim    = 299
+"drone.battery" = { de = 40.0, ate = 10.0 }
+
+[[trechos]]
+inicio = 0
+fim    = 299
+"terrain.below" = "BARE_SOIL"
+
+[[trechos]]
+inicio = 180
+fim    = 259
+"terrain.below" = "WATER"

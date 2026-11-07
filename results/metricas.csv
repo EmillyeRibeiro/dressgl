@@ -1,0 +1,13 @@
+programa,cenario,quadros,acima_orcamento_pct,pior_quadro_ms,ativacoes,desativacoes,retencoes,violacoes_assert,conflitos,atraso_ativacao_medio,atraso_ativacao_max
+dsl,listagem3,300,0.0,15.0,1,1,0,0,0,0.0,0
+dsl_sem_cooldown,listagem3,300,0.0,15.0,1,1,0,0,0,0.0,0
+baseline,listagem3,300,13.333333333333334,18.0,1,1,0,40,0,0.0,0
+multiplas,listagem3,300,0.0,15.0,2,1,0,0,40,0.0,0
+dsl,listagem3_ruido,300,0.0,16.3171013916318,1,1,0,0,0,0.0,0
+dsl_sem_cooldown,listagem3_ruido,300,0.0,16.3171013916318,1,1,0,0,0,0.0,0
+baseline,listagem3_ruido,300,13.333333333333334,18.78586379257798,1,1,0,40,0,0.0,0
+multiplas,listagem3_ruido,300,0.0,16.3171013916318,2,1,0,0,40,0.0,0
+dsl,oscilacao,150,0.0,15.0,2,1,10,0,0,2.5,5
+dsl_sem_cooldown,oscilacao,150,0.0,15.0,3,2,0,0,0,0.0,0
+baseline,oscilacao,150,59.333333333333336,18.0,2,1,10,89,0,2.5,5
+multiplas,oscilacao,150,0.0,15.0,3,1,10,0,90,1.6666666666666667,5
