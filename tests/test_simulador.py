@@ -138,7 +138,7 @@ def test_cenario_invalido(tmp_path, extra):
         carregar_cenario(arq)
 
 def test_scale_resolution_pelo_parser(host):                     # fecha a suposição de D23
-    fonte = ('RULE R GIVEN drone.battery < 18 % WHEN AROUND pass "TerrainPass" '
+    fonte = ('RULE EscalaResolucao GIVEN drone.battery < 18 % WHEN AROUND pass "TerrainPass" '
              'THEN SCALE resolution "FPV" BY 0.5; END\n')
     plano, _ = compor(compilar_programa(fonte, carregar(MODELO_PADRAO)).regras)
     assert plano.escalas == {("resolution", "FPV"): 0.5}
