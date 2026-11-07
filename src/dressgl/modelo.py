@@ -28,6 +28,7 @@ class Dominio:
     valores: tuple = ()          # enumerados ou valores numéricos permitidos
     minimo: float | None = None
     maximo: float | None = None
+    instrumento: str | None = None   # medidor do hospedeiro (V8)
 
 
 @dataclass(frozen=True)
@@ -62,24 +63,27 @@ def _exigir_ident(onde: str, nome: str) -> None:
 def _dominio(onde: str, d) -> Dominio:
     if not isinstance(d, dict):
         raise ErroModelo(f"{onde}: esperada uma tabela")
+    instr = d.get("instrumento")
+    if instr is not None and not (isinstance(instr, str) and instr):
+        raise ErroModelo(f"{onde}: instrumento deve ser um nome não vazio")
     if "tipo" in d:
         if d["tipo"] != "bool":
             raise ErroModelo(f"{onde}: tipo desconhecido {d['tipo']!r}")
-        return Dominio("bool")
+        return Dominio("bool", instrumento=instr)
     if "enum" in d:
         for v in d["enum"]:
             toks = tokenizar(v)
             if not (len(toks) == 2 and toks[0].tipo is T.ENUM):
                 raise ErroModelo(f"{onde}: {v!r} não é enumerado (CAIXA_ALTA)")
-        return Dominio("enum", valores=tuple(d["enum"]))
+        return Dominio("enum", valores=tuple(d["enum"]), instrumento=instr)
     if d.get("campo_escalar"):
-        return Dominio("campo")
+        return Dominio("campo", instrumento=instr)
     unidade = d.get("unidade")
     if unidade is not None and unidade not in UNIDADES:
         raise ErroModelo(f"{onde}: unidade {unidade!r} não existe no léxico; "
                          f"use uma de {', '.join(UNIDADES)}")
     return Dominio("num", unidade, tuple(d.get("valores", ())),
-                   d.get("min"), d.get("max"))
+                   d.get("min"), d.get("max"), instr)
 
 
 def construir(dados: dict) -> Modelo:
