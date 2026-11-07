@@ -10,4 +10,6 @@ __pycache__/
 *.tmp
 
 # Documento de trabalho (substituído por docs/decisions.md)
-docs/decision.docxresults/
+docs/decision.docx
+# Traces regeneráveis (D30); o resto de results/ é versionado (D38)
+results/trace_*.jsonl
