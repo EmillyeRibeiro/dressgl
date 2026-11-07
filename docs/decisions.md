@@ -8,7 +8,7 @@
 | D4 | Comentário com `#`; enumerados em CAIXA_ALTA | Convenções léxicas; confirmada (testes de lexer e D11 dependem dela) |
 | D5 | Erro léxico gera token ERRO e a varredura continua | Relatar todos os erros de uma vez |
 | D6 | `referencia = IDENT ["." IDENT] \| alvo "." IDENT` | Aceitar `frame_budget`; continua LL(1) |
-| D7 | AgroView-SC reimplementado (PySide6/NumPy); Listagem 1 vira baseline | Código antigo descartado |
+| D7 | AgroView-SC reimplementado (PySide6/NumPy); Listagem 1 fica como ilustração do estilo imperativo | Código antigo descartado; o baseline experimental é o da D33 |
 | D8 | CoppeliaSim 4.10.0 Edu (Bullet 2.78) fornece telemetria via ZMQ (porta 23000) | Indicação do professor |
 | D9 | Modelo do hospedeiro em `modelo/agroview.toml`, lido pelo compilador e pelo host | Desacoplar a linguagem da parte gráfica |
 | D10 | Códigos V1–V8 conforme o artigo (II-D, P4); C1 e C2 são verificações complementares fora da numeração | Rastreabilidade entre artigo, código e testes |
@@ -31,7 +31,7 @@
 | D27 | Custo estimado por ação fica no hospedeiro (simulado ou real), não no motor | O motor decide; quem mede é o hospedeiro |
 | D28 | Hospedeiro simulado determinístico: cada cenário é um TOML em `examples/cenarios/` com trechos de entradas por quadro (constante ou rampa `{de, ate}`; trechos posteriores sobrepõem os anteriores). Ruído gaussiano opcional, com semente fixa por quadro | Experimentos reproduzíveis: o mesmo cenário gera o mesmo trace |
 | D29 | Custo de quadro modelado: `base + Σ(passos executados) custo_passo × fração_instâncias + Σ(superfícies habilitadas) custo_sup × escala² × hz/hz_padrão`, com parâmetros em `[custo]` no `agroview.toml`. Passos executados = padrão − SUPPRESS + INJECT. O hospedeiro aplica o plano de t e produz as leituras de t+1 (D25, D27) | Mede o efeito das ações sem GUI; no artigo, números calibrados à mão, modelados e não medidos |
-| D30 | Trace em JSON Lines (`results/trace_<cenario>.jsonl`): um `Registro` por linha, com as leituras e a condição de cada regra no quadro. Tuplas viram listas; chaves viram `"SUP.attr"` | `grep` por quadro; leitura simples com `json`/pandas (P7) |
+| D30 | Trace em JSON Lines (`results/trace_*.jsonl`): um `Registro` por linha, com as leituras e a condição de cada regra no quadro. Tuplas viram listas; chaves viram `"SUP.attr"` | `grep` por quadro; leitura simples com `json`/pandas (P7) |
 | D31 | Métricas do trace: % de quadros acima do orçamento, pior quadro, ativações/desativações, retenções, violações de ASSERT, conflitos, atraso de ativação (médio/máx.) | Base da comparação DSL × baseline (Passo 6) |
 | D32 | Configuração em vigor = padrão do atributo substituído pelo plano do quadro; ao desativar, volta ao padrão. Padrão: `valores` → maior; `enum` → primeiro; `bool` → true. `view:SUP.scale` inclui o fator de SCALE resolution | Plano recalculado a cada quadro (D19, D22); o nominal é o estado de maior qualidade |
 | D33 | Baseline = a regra da Listagem 3 sem as compensações (sem `SET AGRO.hz` e sem `SCALE`), com a mesma POLICY (cooldown 10) e o mesmo GIVEN/WHEN/ASSERT (`baseline_sem_compensacao.dgl`) | Isola o efeito das compensações. Ameaça à validade: baseline construído pelos autores, não é uma implementação imperativa independente |
