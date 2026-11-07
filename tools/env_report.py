@@ -44,8 +44,8 @@ def main() -> int:
     with open(os.path.join("results", "ambiente.json"), "w", encoding="utf-8") as fh:
         fh.write(texto + "\n")
     print("\nGravado em results/ambiente.json")
-    if sys.version_info < (3, 10):
-        print("ATENCAO: o projeto exige Python >= 3.10.")
+    if sys.version_info < (3, 11):
+        print("ATENCAO: o projeto exige Python >= 3.11.")
         return 1
     return 0
 

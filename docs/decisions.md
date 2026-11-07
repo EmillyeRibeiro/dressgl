@@ -5,7 +5,7 @@
 | D1 | Artigo, README e mensagens de erro em português; palavras-chave da DSL em inglês | Padrão da disciplina; herança do BDD/DRESS-ML |
 | D2 | Analisadores léxico e sintático escritos à mão, sem gerador | Tabela II da Etapa 1 |
 | D3 | Unidade incorporada ao literal: NUM (ws? UNIDADE)?, ws = espaço/tab | Linguagem léxica regular; viabiliza V2 |
-| D4 | Comentário com `#`; enumerados em CAIXA_ALTA | Convenções léxicas (aguardando confirmação) |
+| D4 | Comentário com `#`; enumerados em CAIXA_ALTA | Convenções léxicas; confirmada (testes de lexer e D11 dependem dela) |
 | D5 | Erro léxico gera token ERRO e a varredura continua | Relatar todos os erros de uma vez |
 | D6 | `referencia = IDENT ["." IDENT] \| alvo "." IDENT` | Aceitar `frame_budget`; continua LL(1) |
 | D7 | AgroView-SC reimplementado (PySide6/NumPy); Listagem 1 vira baseline | Código antigo descartado |

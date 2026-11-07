@@ -16,4 +16,5 @@ where = ["src"]
 
 [tool.pytest.ini_options]
 testpaths = ["tests"]
+pythonpath = ["src"]
 markers = ["coppelia: exige o CoppeliaSim aberto"]
