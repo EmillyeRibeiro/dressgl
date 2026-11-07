@@ -20,3 +20,6 @@
 | D16 | V8: ASSERT só usa telemetria com `instrumento` declarado ou atributos de view; entradas do simulador (drone.battery) não são instrumentos | ASSERT é contrato sobre o efeito das ações, medido pelo hospedeiro |
 | D17 | Composição entre regras ativas: mínimo para números, conjunção para booleanos, nenhuma para enumerados | Seção II-C (iii); base de P6 |
 | D18 | Python >= 3.11 | tomllib na biblioteca padrão |
+| D19 | Back end gera representação intermediária: cada regra vira condição + tupla de efeitos imutáveis; compilar não altera o hospedeiro, aplicar e compor efeitos é papel do motor (P6) | Testável sem GUI; mesma interface para baseline e DSL (P5) |
+| D20 | `compilar_programa` só gera código sem erros: léxico/sintático interrompem antes da semântica; erro semântico interrompe antes da geração; avisos não bloqueiam | Evita diagnósticos em cascata sobre AST parcial; as garantias do artigo só valem para programas validados |
+| D21 | Leituras nomeadas: telemetria pela chave do TOML (`drone.battery`, `frame_budget`); configuração aplicada como `view:SUP.attr`; leitura ausente gera `ErroExecucao` | Contrato explícito entre hospedeiro e regras |
