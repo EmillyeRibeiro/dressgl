@@ -23,6 +23,15 @@ def ordem(r: RegraExecutavel):
     linha no fonte (D22)."""
     return (r.prioridade is None, -(r.prioridade or 0), r.linha)
 
+def _combinar(atual, novo):
+    """D17: mínimo para números, conjunção para booleanos.
+    Devolve None quando não há composição (enumerados ou tipos mistos)."""
+    if isinstance(atual, bool) and isinstance(novo, bool):
+        return atual and novo
+    numero = lambda v: isinstance(v, (int, float)) and not isinstance(v, bool)
+    if numero(atual) and numero(novo):
+        return min(atual, novo)
+    return None
 
 @dataclass(frozen=True)
 class Conflito:
@@ -58,7 +67,11 @@ def compor(regras: Iterable[RegraExecutavel]) -> tuple[Plano, tuple[Conflito, ..
                 if k not in sets:
                     sets[k], dono_set[k] = ef.valor, r.nome
                 elif sets[k] != ef.valor:
-                    conflitos.append(Conflito(f"{k[0]}.{k[1]}", dono_set[k], r.nome))
+                    combinado = _combinar(sets[k], ef.valor)
+                    if combinado is None:
+                        conflitos.append(Conflito(f"{k[0]}.{k[1]}", dono_set[k], r.nome))
+                    else:
+                        sets[k] = combinado
             elif isinstance(ef, EfeitoScale):
                 k = (ef.recurso, ef.nome)
                 escalas[k] = min(escalas[k], ef.fator) if k in escalas else ef.fator

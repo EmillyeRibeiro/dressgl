@@ -106,3 +106,18 @@ def test_leitura_ausente_nao_avanca_estado(motor_l3):
         motor_l3.passo({"drone.battery": 10})
     assert motor_l3.quadro == -1
     assert motor_l3.passo(leit(10)).quadro == 0
+
+def test_set_numerico_compoe_pelo_minimo():                     # D17
+    a = regra("A", 80, 1, EfeitoSet("AGRO", "hz", 5))
+    b = regra("B", 20, 2, EfeitoSet("AGRO", "hz", 2))
+    for regras in ((a, b), (b, a)):
+        plano, conflitos = compor(regras)
+        assert plano.sets == {("AGRO", "hz"): 2} and conflitos == ()
+
+
+def test_set_booleano_compoe_por_conjuncao():                   # D17
+    a = regra("A", 80, 1, EfeitoSet("FPV", "overlay", True))
+    b = regra("B", 20, 2, EfeitoSet("FPV", "overlay", False))
+    for regras in ((a, b), (b, a)):
+        plano, conflitos = compor(regras)
+        assert plano.sets == {("FPV", "overlay"): False} and conflitos == ()
