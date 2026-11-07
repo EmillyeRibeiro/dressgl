@@ -10,4 +10,4 @@ __pycache__/
 *.tmp
 
 # Documento de trabalho (substituído por docs/decisions.md)
-docs/decision.docx
+docs/decision.docxresults/
