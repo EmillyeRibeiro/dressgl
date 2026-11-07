@@ -23,3 +23,9 @@ crops = { passo = "CropInstancesPass" }
 "terrain.below"       = { enum = ["WATER", "STANDING_CROP", "BARE_SOIL"] }
 "terrain.suitability" = { campo_escalar = true }   # alvo de ARGMAX/ARGMIN
 frame_budget          = { unidade = "ms", instrumento = "cronometro_quadro" }  # V8
+
+[custo]                      # D29: custo MODELADO em ms por quadro, calibrado à mão
+base_ms       = 2.0
+passos_padrao = ["TerrainPass", "CropInstancesPass"]
+passos        = { TerrainPass = 3.0, SuitabilityPass = 3.0, CropInstancesPass = 4.0 }
+superficies   = { FPV = 3.0, MAP = 1.0, AGRO = 2.0 }

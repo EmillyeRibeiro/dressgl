@@ -1,0 +1,20 @@
+# Cenário da Listagem 3 (D28). Trechos posteriores sobrepõem os anteriores.
+nome     = "listagem3"
+quadros  = 300
+semente  = 42
+ruido_ms = 0.0           # sem ruído: o trace é idêntico em toda execução
+
+[[trechos]]              # bateria cai linearmente de 40 % para 10 %
+inicio = 0
+fim    = 299
+"drone.battery" = { de = 40.0, ate = 10.0 }
+
+[[trechos]]
+inicio = 0
+fim    = 299
+"terrain.below" = "BARE_SOIL"
+
+[[trechos]]              # sobrevoo de água
+inicio = 180
+fim    = 259
+"terrain.below" = "WATER"
