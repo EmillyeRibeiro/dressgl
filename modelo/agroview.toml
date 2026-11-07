@@ -1,0 +1,25 @@
+[superficies.FPV]
+criticidade = "CRITICA"                      # V4: nunca pode ser desativada
+atributos.enabled = { tipo = "bool" }
+atributos.scale   = { valores = [0.5, 0.75, 1.0] }
+atributos.hz      = { unidade = "Hz", valores = [15, 30, 60] }
+
+[superficies.MAP]
+criticidade = "ALTA"
+atributos.mode = { enum = ["NOMINAL", "SUITABILITY"] }
+
+[superficies.AGRO]
+criticidade = "BAIXA"
+atributos.hz = { unidade = "Hz", valores = [1, 2, 5, 10] }
+
+[passos]
+nomes = ["TerrainPass", "SuitabilityPass", "CropInstancesPass"]
+
+[instancias]
+crops = { passo = "CropInstancesPass" }
+
+[telemetria]
+"drone.battery"       = { unidade = "%", min = 0, max = 100 }   # entrada (CoppeliaSim)
+"terrain.below"       = { enum = ["WATER", "STANDING_CROP", "BARE_SOIL"] }
+"terrain.suitability" = { campo_escalar = true }   # alvo de ARGMAX/ARGMIN
+frame_budget          = { unidade = "ms", instrumento = "cronometro_quadro" }  # V8
