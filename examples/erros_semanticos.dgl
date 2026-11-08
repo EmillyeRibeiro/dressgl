@@ -1,0 +1,17 @@
+POLICY AgroViewSC {
+  budget = 16.67 ms;
+}
+
+RULE PerdaGps PRIORITY 80
+  GIVEN drone.altitude < 10 m
+  WHEN  AROUND pass "TerrainPass"
+  THEN  SET view "FPV".enabled = false;
+        SET view "AGRO".hz = 2;
+END
+
+RULE PousoImpossivel PRIORITY 70
+  GIVEN drone.battery < 10 % AND drone.battery > 20 %
+  WHEN  AROUND pass "SuitabilityPass"
+  THEN  INJECT pass "SuitabilityPass" AFTER "TerrainPass";
+  ASSERT drone.battery > 5 %
+END
