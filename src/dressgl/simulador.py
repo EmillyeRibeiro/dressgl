@@ -16,6 +16,7 @@ from dataclasses import dataclass
 from pathlib import Path
 
 from . import trace
+from .hospedeiro import Hospedeiro
 from .interpretador import compilar_programa
 from .modelo import MODELO_PADRAO, carregar
 from .motor import Motor, Plano, compor
@@ -159,7 +160,7 @@ class HospedeiroSimulado:
         return l
 
 
-def executar(programa, cenario: Cenario, hospedeiro=None) -> list[dict]:
+def executar(programa, cenario: Cenario, hospedeiro: Hospedeiro | None = None) -> list[dict]:
     """Roda o cenário inteiro e devolve as linhas do trace (D30)."""
     host = hospedeiro or HospedeiroSimulado(cenario)
     motor = Motor(programa)

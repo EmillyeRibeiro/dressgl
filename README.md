@@ -57,8 +57,8 @@ O manual completo da linguagem está em [`docs/manual.md`](docs/manual.md).
 - Git.
 - Opcional: CoppeliaSim 4.10 Edu, apenas para `tools/coppeliasim_smoke.py`.
 
-O pacote declara a dependência `coppeliasim-zmqremoteapi-client`, que é usada
-somente pelas ferramentas do CoppeliaSim. O compilador e o simulador usam
+O cliente `coppeliasim-zmqremoteapi-client` é opcional (extra `coppelia`) e só
+é usado pelas ferramentas do CoppeliaSim. O compilador e o simulador usam
 apenas a biblioteca padrão.
 
 ## Instalação
@@ -71,7 +71,7 @@ cd dressgl
 python -m venv .venv
 .venv\Scripts\activate
 python -m pip install --upgrade pip
-pip install -e ".[dev]"
+pip install -e ".[dev,coppelia]"
 ```
 
 Linux/macOS:

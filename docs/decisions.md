@@ -40,3 +40,5 @@
 | D36 | `multiplas_regras.dgl`: Listagem 3 + `EconomiaBateria` (PRIORITY 50), criada para exercitar D22 (conflito em `MAP.mode`) e D17 (`AGRO.hz`, `crops`) | Regra sintética; o artigo deve dizer isso |
 | D37 | `python -m dressgl.experimentos`: matriz 4 programas × 3 cenários → `results/metricas.csv`, `results/metricas.md` e `trace_<programa>__<cenario>.jsonl` | Tabela do Passo 6, que pode ser regenerada |
 | D38 | `.gitignore` ignora só `results/trace_*.jsonl`; `ambiente.json`, `requirements-lock.txt`, `smoke*.txt` e `metricas.{csv,md}` ficam versionados | Os traces se regeneram com um comando. A tabela versionada é o retrato exato dos números citados no artigo |
+| D39 | Cliente ZMQ do CoppeliaSim passa de dependência obrigatória para o extra `coppelia` | O núcleo (compilador, motor, simulador) usa só a biblioteca padrão; README e pyproject passam a concordar |
+| D40 | `hospedeiro.Hospedeiro`: protocolo `leituras(quadro, plano) -> leituras`, já cumprido por `HospedeiroSimulado` | Contrato único para simulador, AgroView-SC e CoppeliaSim, sem mudar o comportamento de `executar` |
