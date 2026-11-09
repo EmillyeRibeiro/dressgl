@@ -11,6 +11,8 @@ dependencies = []
 [project.optional-dependencies]
 dev = ["pytest>=8"]
 coppelia = ["coppeliasim-zmqremoteapi-client>=2.0.4"]
+render = ["numpy>=1.26"]
+gui = ["numpy>=1.26", "PySide6>=6.6"]
 
 [tool.setuptools.packages.find]
 where = ["src"]
