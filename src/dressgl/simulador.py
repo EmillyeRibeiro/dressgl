@@ -186,7 +186,7 @@ def main(argv=None):
     linhas = executar(programa, cenario)
     destino = a.saida / f"trace_{cenario.nome}.jsonl"
     trace.gravar(destino, linhas)
-    orc = programa.politica.budget_ms if programa.politica else None   # conferir o nome
+    orc = programa.politica.budget_ms if programa.politica else None 
     for k, v in trace.metricas(linhas, orc).items():
         print(f"{k:24} {v}")
     print(f"trace: {destino}")
