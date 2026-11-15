@@ -40,3 +40,47 @@
 | D36 | `multiplas_regras.dgl`: Listagem 3 + `EconomiaBateria` (PRIORITY 50), criada para exercitar D22 (conflito em `MAP.mode`) e D17 (`AGRO.hz`, `crops`) | Regra sintética; o artigo deve dizer isso |
 | D37 | `python -m dressgl.experimentos`: matriz 4 programas × 3 cenários → `results/metricas.csv`, `results/metricas.md` e `trace_<programa>__<cenario>.jsonl` | Tabela do Passo 6, que pode ser regenerada |
 | D38 | `.gitignore` ignora só `results/trace_*.jsonl`; `ambiente.json`, `requirements-lock.txt`, `smoke*.txt` e `metricas.{csv,md}` ficam versionados | Os traces se regeneram com um comando. A tabela versionada é o retrato exato dos números citados no artigo |
+| D39 | Cliente ZMQ do CoppeliaSim passa de dependência obrigatória para o extra `coppelia` | O núcleo (compilador, motor, simulador) usa só a biblioteca padrão; README e pyproject passam a concordar |
+| D40 | `hospedeiro.Hospedeiro`: protocolo `leituras(quadro, plano) -> leituras`, já cumprido por `HospedeiroSimulado` | Contrato único para simulador, AgroView-SC e CoppeliaSim, sem mudar o comportamento de `executar` |
+| D41 | As versões anteriores do AgroView-SC (`agroview_sc.py` em `Documents\FHO…\AgroView-SC`, OpenGL 3.3) estão obsoletas e não serão reaproveitadas. Corrige a D7, escrita antes de a reimplementação existir. O novo AgroView-SC fica em `src/agroview/`, com os extras `render` (NumPy) e `gui` (NumPy + PySide6); o núcleo `dressgl` não importa `agroview`, NumPy nem PySide6 | Código antigo incompatível com o motor atual; mantém a D39, garantida por `tests/test_nucleo_sem_numpy.py` |
+| D42 | A renderização é feita em CPU com NumPy. Cada passo informa uma carga determinística (operações por pixel), usada nos testes, e um tempo medido com `perf_counter`, usado só na calibração e nas medições | Testes reproduzíveis que não dependem da máquina. Ameaça à validade: o tempo é de CPU, não de GPU. Aguarda confirmação do professor |
+| D43 | hz no hospedeiro real é decimação, não média. Uma superfície com hz = h é desenhada inteira nos quadros em que q % round(60/h) == 0 e não é desenhada nos outros. A fase é fixa em q = 0, para ser determinística. Isso difere do D29, onde o custo é multiplicado por h/h_padrão em todo quadro | Consequência: a média pode ficar dentro do orçamento enquanto o pior_quadro_ms mostra picos. No artigo, a diferença é tratada como achado, não como erro |
+| D44 | Ordem dos passos. Passos padrão na ordem de [custo].passos_padrao, menos os SUPPRESS. Cada INJECT entra BEFORE/AFTER da sua âncora, e a âncora pode ser outro passo injetado. Com várias injeções na mesma âncora, a de maior prioridade fica mais perto dela | Uma âncora ausente (suprimida) é erro do hospedeiro (ErroOrdem) |
+| D45 | No B2, o HospedeiroAgroView associa os passos às superfícies assim: FPV = TerrainPass + CropInstancesPass; AGRO = SuitabilityPass (campo de aptidão colorido); MAP = SuitabilityPass com sobrepor=True quando mode = SUITABILITY e terreno quando NOMINAL. O FPV é sintético (mapa_altura com semente) até o B3 | O renderizador não fixa a associação; deixá-la no hospedeiro mantém o render.py independente da DSL |
+| D46 | No hospedeiro medido, frame_budget é o custo do próprio quadro (cronômetro de quadro, V8), com os picos da decimação do D43. Não é feita média. O simulado continua usando o custo médio (hz/padrão, D29). Para comparar os dois, usam-se médias em janelas de 60 quadros | É o que o instrumento mede de fato. Ameaça à validade: o modelo médio esconde picos que podem disparar regras do tipo frame_budget > X |
+| D47 | Complementa a D45: o pipeline da DSL (D44) desenha o FPV; um SuitabilityPass injetado desenha no FPV com sobrepor=True. MAP e AGRO são desenhados pelo hospedeiro fora do pipeline, conforme a D45 | A D45 não dizia onde vai um passo injetado; assim INJECT/SUPPRESS afetam a superfície principal, como no custo da D29 |
+D48 | ms_por_carga é calibrado por tools/calibrar.py como mediana(tempo)/mediana(carga), usando os quadros 60–119 de um cenário fixo e descartando o aquecimento (q < 60). O valor é gravado em results/calibracao.json junto com o ambiente.json. Os testes usam um valor fixo qualquer, porque verificam a carga e não o tempo | Separa a reprodutibilidade (carga) da medição (tempo). O valor só vale para a máquina onde foi calibrado
+## D48 — Relógio por carga calibrado por passo
+
+**Contexto.** No modo `relogio='carga'`, o `HospedeiroAgroView` convertia
+carga em tempo com um único `ms_por_carga`. A calibração (540 quadros após
+60 de aquecimento, CPU, NumPy; máquina em `results/ambiente.json`) mostrou
+custos por unidade de carga muito diferentes (medianas): TerrainPass
+≈ 50,8 ns (n = 1080, FPV e MAP), CropInstancesPass ≈ 87,8 ns (n = 540) e
+SuitabilityPass ≈ 1,55 ns (n = 90). Com um coeficiente global calibrado nos
+quadros comuns, o quadro com AGRO valeria ≈ 42 ms em vez de ≈ 5 ms.
+
+**Decisão.** A carga continua sendo uma contagem estrutural (pixels ×
+operações por pixel), independente da máquina. A conversão para tempo usa um
+coeficiente por **nome de passo**, `ms_por_carga[passo]`: a mediana de
+ms/carga gravada por `tools/calibrar_relogio.py` em `results/calibracao.toml`
+e lida por `agroview.calibracao.carregar_calibracao`. A chave é o nome do
+passo, e não o par (passo, superfície), porque o TerrainPass tem o mesmo custo
+por unidade em FPV e MAP. Um número único continua aceito, por
+compatibilidade. Um passo sem coeficiente é erro explícito (`ValueError`), sem
+valor padrão.
+
+**Alternativa rejeitada (B).** Reduzir o peso 81 do SuitabilityPass para que
+a carga ficasse proporcional ao tempo. A carga passaria a depender da
+implementação (vetorização, backend, máquina) e perderia o significado
+estrutural.
+
+**Consequências.** No modo carga, `frame_budget` é determinístico (dado o
+arquivo de calibração) e previsto em ≈ 3,9 ms no quadro comum e ≈ 5,1 ms no
+quadro com AGRO. Limitações: (i) o modelo é linear, sem termo fixo, então
+passos com custo fixo relevante (CropInstancesPass) ficam subestimados quando
+a carga cai; (ii) o SuitabilityPass foi calibrado só no AGRO, e as variantes
+sobrepostas no MAP e no FPV (D45, D47) usam o mesmo coeficiente sem medição
+própria; (iii) a calibração mede os passos, não o intervalo entre eles, que o
+cronômetro de quadro (D46) inclui; (iv) a calibração vale para a máquina em
+que foi feita.

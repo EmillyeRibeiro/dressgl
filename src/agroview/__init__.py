@@ -1,0 +1,1 @@
+"""AgroView-SC: hospedeiro real do DRESS-GL (D41). Requer o extra [render] ou [gui]."""

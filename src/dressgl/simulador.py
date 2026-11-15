@@ -4,6 +4,10 @@ Substitui o AgroView-SC nos experimentos: lê um cenário determinístico
 (D28), recebe o plano do motor e produz as leituras do quadro seguinte com
 um custo de quadro MODELADO, não medido (D29). Views seguem D32.
 
+`padrao` e `configuracao` são de módulo para que outros hospedeiros
+(o adaptador do AgroView-SC, a ponte com o CoppeliaSim) devolvam as mesmas
+chaves 'view:SUP.attr' que o simulado (D21, D40).
+
 Uso: python -m dressgl.simulador examples\\safe_setdown.dgl examples\\cenarios\\listagem3.toml
 """
 
@@ -16,6 +20,7 @@ from dataclasses import dataclass
 from pathlib import Path
 
 from . import trace
+from .hospedeiro import Hospedeiro
 from .interpretador import compilar_programa
 from .modelo import MODELO_PADRAO, carregar
 from .motor import Motor, Plano, compor
@@ -48,6 +53,21 @@ def padrao(spec):
     if spec.get("tipo") == "bool":
         return True
     raise ErroCenario(f"atributo sem valor padrão: {spec}")
+
+
+def configuracao(superficies: dict, plano: Plano) -> dict:
+    """'view:SUP.attr' -> valor em vigor (D21, D23, D32).
+
+    `superficies` é a seção [superficies] do modelo. O SCALE resolution
+    multiplica o `scale` em vigor (SET ou padrão)."""
+    conf = {}
+    for sup, d in superficies.items():
+        for attr, spec in d.get("atributos", {}).items():
+            v = plano.sets.get((sup, attr), padrao(spec))
+            if attr == "scale":
+                v *= plano.escalas.get(("resolution", sup), 1.0)
+            conf[f"view:{sup}.{attr}"] = v
+    return conf
 
 
 @dataclass(frozen=True)
@@ -117,17 +137,12 @@ class HospedeiroSimulado:
 
     def configuracao(self, plano: Plano) -> dict:
         """'view:SUP.attr' -> valor em vigor (D21, D23, D32)."""
-        conf = {}
-        for sup, d in self.superficies.items():
-            for attr, spec in d.get("atributos", {}).items():
-                v = plano.sets.get((sup, attr), padrao(spec))
-                if attr == "scale":
-                    v *= plano.escalas.get(("resolution", sup), 1.0)
-                conf[f"view:{sup}.{attr}"] = v
-        return conf
+        # Dentro do método, o nome resolve para a função de módulo.
+        return configuracao(self.superficies, plano)
 
     def custo_ms(self, plano: Plano) -> float:
-        """D29 (modelado)."""
+        """D29 (modelado). O hz entra como média: hz/padrão em todo quadro.
+        O hospedeiro medido decima (D43) e tem picos periódicos (D46)."""
         c, conf = self.param, self.configuracao(plano)
         executados = ((set(c["passos_padrao"]) - plano.supressoes)
                       | {inj.passo for inj in plano.injecoes})
@@ -159,7 +174,7 @@ class HospedeiroSimulado:
         return l
 
 
-def executar(programa, cenario: Cenario, hospedeiro=None) -> list[dict]:
+def executar(programa, cenario: Cenario, hospedeiro: Hospedeiro | None = None) -> list[dict]:
     """Roda o cenário inteiro e devolve as linhas do trace (D30)."""
     host = hospedeiro or HospedeiroSimulado(cenario)
     motor = Motor(programa)
@@ -185,7 +200,7 @@ def main(argv=None):
     linhas = executar(programa, cenario)
     destino = a.saida / f"trace_{cenario.nome}.jsonl"
     trace.gravar(destino, linhas)
-    orc = programa.politica.budget_ms if programa.politica else None   # conferir o nome
+    orc = programa.politica.budget_ms if programa.politica else None
     for k, v in trace.metricas(linhas, orc).items():
         print(f"{k:24} {v}")
     print(f"trace: {destino}")

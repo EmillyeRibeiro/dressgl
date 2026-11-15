@@ -1,0 +1,6 @@
+# Gerado por tools/calibrar_relogio.py (D48). ms por unidade de carga.
+# 540 quadros medidos; ver results/ambiente.json.
+[ms_por_carga]
+"CropInstancesPass" = 8.775001e-05  # n=540
+"SuitabilityPass" = 1.546425e-06  # n=90
+"TerrainPass" = 5.075608e-05  # n=1080
