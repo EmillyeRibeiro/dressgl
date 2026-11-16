@@ -39,3 +39,18 @@ def test_varredura_ruido_reproduz_csv(tmp_path):
     esperado = _ler(RAIZ / "results" / "varredura_ruido.csv")
     assert len(esperado) == len(vr.ERROS) * len(vr.SEMENTES) * len(vr.PROGRAMAS)  # 80
     _comparar(esperado, _ler(novo))
+
+
+def test_metricas_coppelia_reproduz_csv(tmp_path):
+    from ponte_coppelia import experimentos as ex
+    esperado = _ler(RAIZ / "results" / "metricas_coppelia.csv")
+    # mesmos hospedeiros do CSV versionado, na ordem em que aparecem nele
+    hosp = list(dict.fromkeys(l["hospedeiro"] for l in esperado))
+    ex.main(["--gravacoes", str(RAIZ / "results"), "--saida", str(tmp_path),
+             "--hospedeiros", *hosp])
+    _comparar(esperado, _ler(tmp_path / "metricas_coppelia.csv"))
+
+    md = RAIZ / "results" / "metricas_coppelia.md"
+    if md.exists():
+        assert ((tmp_path / "metricas_coppelia.md").read_text(encoding="utf-8").splitlines()
+                == md.read_text(encoding="utf-8").splitlines())
