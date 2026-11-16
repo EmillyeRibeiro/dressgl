@@ -50,7 +50,20 @@
 | D46 | No hospedeiro medido, frame_budget é o custo do próprio quadro (cronômetro de quadro, V8), com os picos da decimação do D43. Não é feita média. O simulado continua usando o custo médio (hz/padrão, D29). Para comparar os dois, usam-se médias em janelas de 60 quadros | É o que o instrumento mede de fato. Ameaça à validade: o modelo médio esconde picos que podem disparar regras do tipo frame_budget > X |
 | D47 | Complementa a D45: o pipeline da DSL (D44) desenha o FPV; um SuitabilityPass injetado desenha no FPV com sobrepor=True. MAP e AGRO são desenhados pelo hospedeiro fora do pipeline, conforme a D45 | A D45 não dizia onde vai um passo injetado; assim INJECT/SUPPRESS afetam a superfície principal, como no custo da D29 |
 | D48 | `ms_por_carga` por nome de passo: mediana de ms/carga medida por `tools/calibrar_relogio.py` (540 quadros após 60 de aquecimento), gravada em `results/calibracao.toml`; passo sem coeficiente é `ValueError` | Ver D48 em Detalhes |
-## D48 — Relógio por carga calibrado por passo
+| D49 | Ponte com o CoppeliaSim síncrona, em modo stepping (`sim.setStepping`); substitui a thread da D26 | O motor continua síncrono e puro, e a física só avança quando a ponte pede: execução determinística. Tempo real fica fora do escopo |
+| D50 | Um passo da física (50 ms, hz_sim = 20) a cada 3 quadros de 60 Hz; entre passos vale a última leitura (amostra e retém). O passo da cena precisa ser igual a 1/hz_sim | Casa a física com o relógio da estação sem interpolar |
+| D51 | O CoppeliaSim fornece posição e tempo simulado. `terrain.below` vem de zonas retangulares da missão (a última zona vence); `drone.battery` é linear no tempo simulado | Ameaça à validade: bateria modelada, sem relação com o empuxo dos motores |
+| D52 | Cada voo é gravado em `results/gravacao_<missao>.jsonl` (versionado) e pode ser repetido como `Cenario`, sem o CoppeliaSim | Os experimentos com física continuam reprodutíveis e testáveis sem o simulador |
+| D53 | A gravação inclui o alvo e o solo sob o alvo (`alvo`, `solo_alvo`). `atraso_fisico_quadros` = 1º quadro com o drone na água − 1º quadro com o alvo na água | Separa o atraso da física (inércia do drone) do atraso do cooldown (`atraso_ativacao`), que parte da condição já avaliada sobre a posição real |
+| D54 | `python -m ponte_coppelia.experimentos`: programas da D37 × gravações × {simulado, agroview com relógio por carga} → `results/metricas_coppelia.{csv,md}`, versionados | A gravação não depende do programa, então um voo alimenta todos os programas. Os experimentos da v1.0 não mudam |
+| D55 | Zonas desenhadas por `tools/desenhar_zonas.py` a partir da missão (planos estáticos, não respondable); cena versionada em `cenas/agro_quadcopter.ttt` | Só visual: a zona que vale é a do TOML; o script evita divergência entre a cena e a missão |
+| D56 | Ruído de percepção Gauss-Markov sobre gravações físicas, com parâmetros e hipótese fixados antes da execução | Ver D56 em Detalhes |
+| D57 | Escopo da avaliação: um cenário excepcional (bateria em reserva sobre solo impróprio) em sete condições: operação normal, ativação com compensação, oscilação sintética, oscilação física, ruído no custo, ruído na percepção e composição de regras. Os outros cinco cenários da Seção III-A ficam como trabalho futuro | O roteiro da disciplina não fixa um número de cenários; os cinco restantes exigem telemetria que o modelo não declara |
+| D58 | Gravação de referência de borda_agua: `results/gravacao_borda_agua.jsonl`. `results/rep1` e `results/rep2` são repetições a partir da cena recém-aberta; `results/arquivo` guarda uma repetição sem reabrir a cena, mantida como evidência | rep1 = rep2 (mesmo hash); diferem da referência só em `pos`, no máximo 5,0e-8 m, e geram o mesmo trace. A repetição sem reabrir a cena divergiu |
+
+## Detalhes
+
+### D48 — Relógio por carga calibrado por passo
 
 **Contexto.** No modo `relogio='carga'`, o `HospedeiroAgroView` convertia
 carga em tempo com um único `ms_por_carga`. A calibração (540 quadros após
@@ -84,14 +97,8 @@ sobrepostas no MAP e no FPV (D45, D47) usam o mesmo coeficiente sem medição
 própria; (iii) a calibração mede os passos, não o intervalo entre eles, que o
 cronômetro de quadro (D46) inclui; (iv) a calibração vale para a máquina em
 que foi feita.
-| D49 | Ponte com o CoppeliaSim síncrona, em modo stepping (`sim.setStepping`); substitui a thread da D26 | O motor continua síncrono e puro, e a física só avança quando a ponte pede: execução determinística. Tempo real fica fora do escopo |
-| D50 | Um passo da física (50 ms, hz_sim = 20) a cada 3 quadros de 60 Hz; entre passos vale a última leitura (amostra e retém). O passo da cena precisa ser igual a 1/hz_sim | Casa a física com o relógio da estação sem interpolar |
-| D51 | O CoppeliaSim fornece posição e tempo simulado. `terrain.below` vem de zonas retangulares da missão (a última zona vence); `drone.battery` é linear no tempo simulado | Ameaça à validade: bateria modelada, sem relação com o empuxo dos motores |
-| D52 | Cada voo é gravado em `results/gravacao_<missao>.jsonl` (versionado) e pode ser repetido como `Cenario`, sem o CoppeliaSim | Os experimentos com física continuam reprodutíveis e testáveis sem o simulador |
-| D53 | A gravação inclui o alvo e o solo sob o alvo (`alvo`, `solo_alvo`). `atraso_fisico_quadros` = 1º quadro com o drone na água − 1º quadro com o alvo na água | Separa o atraso da física (inércia do drone) do atraso do cooldown (`atraso_ativacao`), que parte da condição já avaliada sobre a posição real |
-| D54 | `python -m ponte_coppelia.experimentos`: programas da D37 × gravações × {simulado, agroview com relógio por carga} → `results/metricas_coppelia.{csv,md}`, versionados | A gravação não depende do programa, então um voo alimenta todos os programas. Os experimentos da v1.0 não mudam |
-| D55 | Zonas desenhadas por `tools/desenhar_zonas.py` a partir da missão (planos estáticos, não respondable); cena versionada em `cenas/agro_quadcopter.ttt` | Só visual: a zona que vale é a do TOML; o script evita divergência entre a cena e a missão |
-## D56 — Ruído de percepção sobre gravações físicas
+
+### D56 — Ruído de percepção sobre gravações físicas
 
 **Contexto.** Na C4 (D53–D55), `retencoes = 0` em todas as gravações e `dsl` = `dsl_sem_cooldown`.
 A dinâmica do veículo filtra excursões curtas: em borda_agua, 1 das 4 excursões do alvo na água
@@ -112,9 +119,7 @@ Os parâmetros não serão ajustados depois de ver os resultados; qualquer mudan
 
 **Limitações.** Cena em escala reduzida (campo de 5 m). Erros não calibrados contra um receptor específico.
 Ruído só em x e y. A classificação do solo é perfeita, dada a posição.
-| D56 | Ruído de percepção Gauss-Markov sobre gravações físicas, com parâmetros e hipótese fixados antes da execução | Ver D56 em Detalhes |
-| D57 | Escopo da avaliação: um cenário excepcional (bateria em reserva sobre solo impróprio) em sete condições: operação normal, ativação com compensação, oscilação sintética, oscilação física, ruído no custo, ruído na percepção e composição de regras. Os outros cinco cenários da Seção III-A ficam como trabalho futuro | O roteiro da disciplina não fixa um número de cenários; os cinco restantes exigem telemetria que o modelo não declara |
-| D58 | Gravação de referência de borda_agua: `results/gravacao_borda_agua.jsonl`. `results/rep1` e `results/rep2` são repetições a partir da cena recém-aberta; `results/arquivo` guarda uma repetição sem reabrir a cena, mantida como evidência | rep1 = rep2 (mesmo hash); diferem da referência só em `pos`, no máximo 5,0e-8 m, e geram o mesmo trace. A repetição sem reabrir a cena divergiu |
+
 **Resultado.** Com erro = 0, as 10 sementes reproduziram a C4 (6 trocas, 3 ativações, 0 retenções), e a verificação de sanidade passou.
 Pareando as sementes, `dsl_sem_cooldown` ativou mais que `dsl` em 3/10 (σ = 0,02 m), 6/10 (0,05 m) e 7/10 (0,10 m),
 sem nenhuma semente em sentido contrário (teste do sinal unilateral: p = 0,125; 0,016; 0,008). A diferença máxima foi de
