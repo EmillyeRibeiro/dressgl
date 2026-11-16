@@ -4,6 +4,7 @@ Uso: python tools\\varredura_ruido.py examples\\missoes\\margem_ruido.toml
 Lê results\\gravacao_<gravacao_base>.jsonl, grava as percebidas em results\\percepcao\\
 (fora do glob da matriz C4) e roda dsl e dsl_sem_cooldown no hospedeiro simulado.
 Saída: results\\varredura_ruido.csv e um resumo em Markdown.
+varrer() faz o cálculo sem gravar o CSV; tests/test_regressao_csv.py a usa.
 """
 import argparse
 import csv
@@ -27,22 +28,19 @@ ERROS = (0.0, 0.02, 0.05, 0.10)
 SEMENTES = tuple(range(1, 11))
 PROGRAMAS = ("dsl", "dsl_sem_cooldown")
 METRICAS = ("ativacoes", "desativacoes", "retencoes", "violacoes_assert", "conflitos")
+CAMPOS = ["erro_pos_m", "semente", "programa", "quadros_divergentes",
+          "trocas_reais", "trocas_percebidas", *METRICAS]
 RAIZ = Path(__file__).resolve().parents[1]
 
 
-def main(argv=None) -> int:
-    ap = argparse.ArgumentParser()
-    ap.add_argument("missao", type=Path)
-    a = ap.parse_args(argv)
-
-    missao = tomllib.loads(a.missao.read_text(encoding="utf-8"))
+def varrer(missao: dict, pasta_results: Path, pasta_percepcao: Path):
+    """Devolve (linhas, info). ValueError se erro=0 não reproduz a gravação."""
     zonas = zonas_da_missao(missao)
     p0, base = percepcao_da_missao(missao)
-    arq_base = RAIZ / "results" / f"gravacao_{base}.jsonl"
+    arq_base = pasta_results / f"gravacao_{base}.jsonl"
     R = ler_jsonl(arq_base)
     trocas_reais = contar_trocas(R)
-    pasta = RAIZ / "results" / "percepcao"
-    pasta.mkdir(parents=True, exist_ok=True)
+    pasta_percepcao.mkdir(parents=True, exist_ok=True)
 
     modelo = carregar(MODELO_PADRAO)
     progs = {n: carregar_programa(n, modelo) for n in PROGRAMAS}
@@ -54,9 +52,9 @@ def main(argv=None) -> int:
             S = aplicar(R, zonas, p)
             n_dif = sum(r["terrain.below"] != x["terrain.below"] for r, x in zip(R, S))
             if erro == 0 and n_dif:
-                sys.exit(f"erro=0, mas {n_dif} quadros divergem: as zonas do TOML não "
-                         "reproduzem a gravação. Rode aplicar_percepcao.py --verificar.")
-            arq = pasta / f"gravacao_{base}__e{erro:.2f}_s{s:02d}.jsonl"
+                raise ValueError(f"erro=0, mas {n_dif} quadros divergem: as zonas do TOML não "
+                                 "reproduzem a gravação. Rode aplicar_percepcao.py --verificar.")
+            arq = pasta_percepcao / f"gravacao_{base}__e{erro:.2f}_s{s:02d}.jsonl"
             escrever_jsonl(arq, S)
             cenario = carregar_gravacao(arq)
             comum = {"erro_pos_m": erro, "semente": s, "quadros_divergentes": n_dif,
@@ -67,16 +65,35 @@ def main(argv=None) -> int:
                 linhas.append({**comum, "programa": n, **{k: m.get(k) for k in METRICAS}})
         print(f"erro={erro:.2f} pronto", file=sys.stderr)
 
-    saida = RAIZ / "results" / "varredura_ruido.csv"
-    campos = ["erro_pos_m", "semente", "programa", "quadros_divergentes",
-              "trocas_reais", "trocas_percebidas", *METRICAS]
+    info = {"arq_base": arq_base, "quadros": len(R), "trocas_reais": trocas_reais, "p0": p0}
+    return linhas, info
+
+
+def escrever_csv(saida: Path, linhas) -> None:
     with open(saida, "w", newline="", encoding="utf-8") as f:
-        w = csv.DictWriter(f, fieldnames=campos)
+        w = csv.DictWriter(f, fieldnames=CAMPOS)
         w.writeheader()
         w.writerows(linhas)
 
+
+def main(argv=None) -> int:
+    ap = argparse.ArgumentParser()
+    ap.add_argument("missao", type=Path)
+    a = ap.parse_args(argv)
+
+    missao = tomllib.loads(a.missao.read_text(encoding="utf-8"))
+    try:
+        linhas, info = varrer(missao, RAIZ / "results", RAIZ / "results" / "percepcao")
+    except ValueError as e:
+        sys.exit(str(e))
+
+    saida = RAIZ / "results" / "varredura_ruido.csv"
+    escrever_csv(saida, linhas)
+
+    arq_base, p0 = info["arq_base"], info["p0"]
     h = hashlib.sha256(arq_base.read_bytes()).hexdigest()[:12]
-    print(f"gravacao_base {arq_base.name} sha256={h} quadros={len(R)} trocas_reais={trocas_reais}")
+    print(f"gravacao_base {arq_base.name} sha256={h} quadros={info['quadros']} "
+          f"trocas_reais={info['trocas_reais']}")
     print(f"percepcao tau={p0.tau_s} s sensor={p0.hz_sensor} Hz sementes={SEMENTES[0]}-{SEMENTES[-1]}\n")
     print("| erro_pos_m | programa | trocas_percebidas | ativacoes | retencoes |")
     print("|---|---|---|---|---|")
