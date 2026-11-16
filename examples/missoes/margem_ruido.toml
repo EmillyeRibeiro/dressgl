@@ -1,0 +1,53 @@
+# Ziguezague na margem da água (x = 0,8) com bateria já abaixo de 18 % (D34 com física).
+nome          = "borda_agua"
+quadros       = 720           # 12 s a 60 Hz
+hz_sim        = 20
+velocidade_ms = 0.5
+
+[bateria]
+inicial       = 17.0          # abaixo de 18 % durante todo o voo
+consumo_pct_s = 0.05
+
+# Mesmas zonas de pouso_agua.toml: uma cena serve para as duas missões.
+[[zonas]]
+solo = "BARE_SOIL"
+x = [-2.5, 2.5]
+y = [-2.5, 2.5]
+
+[[zonas]]
+solo = "STANDING_CROP"
+x = [-2.5, -0.5]
+y = [-2.5, 2.5]
+
+[[zonas]]
+solo = "WATER"
+x = [0.8, 2.2]
+y = [-0.8, 0.8]
+
+[[waypoints]]
+pos = [0.3, -0.5, 1.0]
+[[waypoints]]
+pos = [0.5, -0.6, 1.0]
+[[waypoints]]
+pos = [1.1, -0.4, 1.0]        # entra na água
+[[waypoints]]
+pos = [0.5, -0.2, 1.0]        # sai
+[[waypoints]]
+pos = [1.0, 0.0, 1.0]         # entra
+[[waypoints]]
+pos = [0.6, 0.2, 1.0]         # sai
+[[waypoints]]
+pos = [0.9, 0.4, 1.0]         # entra
+[[waypoints]]
+pos = [0.7, 0.6, 1.0]         # sai
+[[waypoints]]
+pos = [0.82, 0.7, 1.0]        # entra por pouco
+[[waypoints]]
+pos = [0.78, -0.7, 1.0]       # desce rente à margem: a física decide quantas trocas ocorrem
+# D56: percepção com ruído sobre a gravação física de borda_agua
+[percepcao]
+gravacao_base = "borda_agua"
+erro_pos_m = 0.05
+tau_s = 0.5
+hz_sensor = 10
+semente = 1
