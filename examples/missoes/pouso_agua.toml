@@ -1,0 +1,32 @@
+nome          = "pouso_agua"
+quadros       = 1260          # 21 s a 60 Hz
+hz_sim        = 20            # passo de 50 ms na cena: 1 passo a cada 3 quadros
+velocidade_ms = 0.4
+
+[bateria]
+inicial       = 22.0          # %
+consumo_pct_s = 0.4           # chega a 18 % em t = 10 s
+
+[[zonas]]
+solo = "BARE_SOIL"
+x = [-2.5, 2.5]
+y = [-2.5, 2.5]
+
+[[zonas]]
+solo = "STANDING_CROP"
+x = [-2.5, -0.5]
+y = [-2.5, 2.5]
+
+[[zonas]]
+solo = "WATER"
+x = [0.8, 2.2]
+y = [-0.8, 0.8]
+
+[[waypoints]]
+pos = [0.3, -0.5, 1.0]        # decolagem perto da posição inicial do modelo
+[[waypoints]]
+pos = [-1.5, -0.5, 1.0]       # sobre a plantação, bateria > 18 %: não dispara
+[[waypoints]]
+pos = [1.5, 0.0, 1.0]         # entra na água por volta de t ≈ 10,3 s: dispara
+[[waypoints]]
+pos = [0.0, -2.0, 1.0]        # sai para solo exposto por volta de t ≈ 14,6 s: desativa

@@ -1,0 +1,17 @@
+programa,gravacao,hospedeiro,quadros,acima_orcamento_pct,pior_quadro_ms,ativacoes,desativacoes,retencoes,violacoes_assert,conflitos,atraso_ativacao_medio,atraso_ativacao_max,atraso_fisico_quadros
+dsl,borda_agua,simulado,720,0.0,15.0,3,3,0,0,0,0.0,0,36
+dsl_sem_cooldown,borda_agua,simulado,720,0.0,15.0,3,3,0,0,0,0.0,0,36
+baseline,borda_agua,simulado,720,39.166666666666664,18.0,3,3,0,282,0,0.0,0,36
+multiplas,borda_agua,simulado,720,0.0,15.0,4,3,0,0,282,0.0,0,36
+dsl,borda_agua,agroview,720,0.0,14.21629268722,3,3,0,0,0,0.0,0,36
+dsl_sem_cooldown,borda_agua,agroview,720,0.0,14.21629268722,3,3,0,0,0,0.0,0,36
+baseline,borda_agua,agroview,720,0.0,14.334755200719998,3,3,0,0,0,0.0,0,36
+multiplas,borda_agua,agroview,720,0.0,14.21629268722,4,3,0,0,282,0.0,0,36
+dsl,pouso_agua,simulado,1260,0.0,15.0,1,1,0,0,0,0.0,0,24
+dsl_sem_cooldown,pouso_agua,simulado,1260,0.0,15.0,1,1,0,0,0,0.0,0,24
+baseline,pouso_agua,simulado,1260,20.476190476190474,18.0,1,1,0,258,0,0.0,0,24
+multiplas,pouso_agua,simulado,1260,0.0,15.0,2,1,0,0,258,0.0,0,24
+dsl,pouso_agua,agroview,1260,0.0,14.21629268722,1,1,0,0,0,0.0,0,24
+dsl_sem_cooldown,pouso_agua,agroview,1260,0.0,14.21629268722,1,1,0,0,0,0.0,0,24
+baseline,pouso_agua,agroview,1260,0.0,14.334755200719998,1,1,0,0,0,0.0,0,24
+multiplas,pouso_agua,agroview,1260,0.0,14.21629268722,2,1,0,0,258,0.0,0,24

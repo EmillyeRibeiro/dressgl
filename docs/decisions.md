@@ -84,3 +84,10 @@ sobrepostas no MAP e no FPV (D45, D47) usam o mesmo coeficiente sem medição
 própria; (iii) a calibração mede os passos, não o intervalo entre eles, que o
 cronômetro de quadro (D46) inclui; (iv) a calibração vale para a máquina em
 que foi feita.
+| D49 | Ponte com o CoppeliaSim síncrona, em modo stepping (`sim.setStepping`); substitui a thread da D26 | O motor continua síncrono e puro, e a física só avança quando a ponte pede: execução determinística. Tempo real fica fora do escopo |
+| D50 | Um passo da física (50 ms, hz_sim = 20) a cada 3 quadros de 60 Hz; entre passos vale a última leitura (amostra e retém). O passo da cena precisa ser igual a 1/hz_sim | Casa a física com o relógio da estação sem interpolar |
+| D51 | O CoppeliaSim fornece posição e tempo simulado. `terrain.below` vem de zonas retangulares da missão (a última zona vence); `drone.battery` é linear no tempo simulado | Ameaça à validade: bateria modelada, sem relação com o empuxo dos motores |
+| D52 | Cada voo é gravado em `results/gravacao_<missao>.jsonl` (versionado) e pode ser repetido como `Cenario`, sem o CoppeliaSim | Os experimentos com física continuam reprodutíveis e testáveis sem o simulador |
+| D53 | A gravação inclui o alvo e o solo sob o alvo (`alvo`, `solo_alvo`). `atraso_fisico_quadros` = 1º quadro com o drone na água − 1º quadro com o alvo na água | Separa o atraso da física (inércia do drone) do atraso do cooldown (`atraso_ativacao`), que parte da condição já avaliada sobre a posição real |
+| D54 | `python -m ponte_coppelia.experimentos`: programas da D37 × gravações × {simulado, agroview com relógio por carga} → `results/metricas_coppelia.{csv,md}`, versionados | A gravação não depende do programa, então um voo alimenta todos os programas. Os experimentos da v1.0 não mudam |
+| D55 | Zonas desenhadas por `tools/desenhar_zonas.py` a partir da missão (planos estáticos, não respondable); cena versionada em `cenas/agro_quadcopter.ttt` | Só visual: a zona que vale é a do TOML; o script evita divergência entre a cena e a missão |

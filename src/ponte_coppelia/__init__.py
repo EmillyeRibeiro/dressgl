@@ -1,0 +1,1 @@
+"""Ponte entre o CoppeliaSim e o DRESS-GL (D49-D52). O cliente ZMQ é o extra [coppelia]."""
