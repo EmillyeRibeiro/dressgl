@@ -17,6 +17,9 @@ def ler(p):
     return [json.loads(l) for l in Path(p).read_text(encoding="utf-8-sig").splitlines() if l.strip()]
 
 def main():
+    if len(sys.argv) != 3:
+        print("uso: comparar_gravacoes.py GRAVACAO_A GRAVACAO_B", file=sys.stderr)
+        return 2
     a, b = ler(sys.argv[1]), ler(sys.argv[2])
     print(f"quadros                  {len(a)} / {len(b)}")
     if len(a) != len(b):

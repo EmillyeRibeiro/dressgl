@@ -127,3 +127,5 @@ sem nenhuma semente em sentido contrário (teste do sinal unilateral: p = 0,125;
 3 ativações. `retencoes(dsl) > 0` em 30/30 sementes com ruído (faixas 4–24, 4–29, 13–38).
 A hipótese se confirma em σ = 0,05 e 0,10 m e falha em σ = 0,02 m na primeira parte (3/10 não é maioria).
 Os parâmetros não foram alterados depois dos resultados.
+
+| D60 | A gravação de referência do C4 é mantida. A regravação com `cenas/borda_agua.ttt` é equivalente, mas não idêntica byte a byte; `results/rep1` passa a ser a gravação de comparação | Ver D60 em Detalhes |

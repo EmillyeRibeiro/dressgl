@@ -72,12 +72,17 @@ vem das zonas retangulares da missão (`examples/missoes/*.toml`); se zonas se
 sobrepõem, vale a última. `drone.battery` cai linearmente com o tempo
 simulado (D51).
 
-Cada voo é gravado em `results/gravacao_<missao>.jsonl`, que é versionado.
-A gravação inclui o alvo e o solo sob o alvo, o que separa o atraso da física
-do atraso do cooldown (D53). Ela pode ser repetida como cenário **sem o
-CoppeliaSim** (D52); por isso, os experimentos com física são reprodutíveis
-e testados. Para repetir uma gravação com resultado idêntico, reabra a cena
-antes de cada voo (D58).
+Cada voo é gravado em `gravacao_<missao>.jsonl`, na pasta de `--saida`
+(padrão: `results/`). A gravação inclui o alvo e o solo sob o alvo, o que
+separa o atraso da física do atraso do cooldown (D53). Ela pode ser repetida
+como cenário **sem o CoppeliaSim** (D52); por isso, os experimentos com
+física são reprodutíveis e testados.
+
+As gravações de referência (`results/gravacao_*.jsonl`) são do C4. Regravar
+`borda_agua` com `cenas/borda_agua.ttt`, reabrindo a cena antes de cada voo,
+dá sempre o mesmo arquivo, idêntico a `results/rep1/`. Esse arquivo difere
+da referência só em `pos`, por no máximo 5,0e-8 m (resíduo de float32), e
+gera o mesmo trace (D58, D60).
 
 Um ruído de percepção Gauss-Markov pode ser aplicado sobre as gravações. Ele
 altera a posição *percebida*, sem mexer na física (D56).
@@ -306,10 +311,10 @@ Os traces não são versionados (`.gitignore`); as tabelas de métricas são.
 python -m ponte_coppelia.experimentos --gravacoes results --saida results --hospedeiros simulado agroview
 ```
 
-Executa os mesmos 4 programas sobre as gravações de `results/`, nos dois
-hospedeiros (o AgroView-SC com relógio por carga), e grava
-`results/metricas_coppelia.csv` e `results/metricas_coppelia.md`. O teste
-`lento` confere se o resultado é idêntico ao versionado.
+Executa os mesmos 4 programas sobre as gravações de referência de
+`results/`, nos dois hospedeiros (o AgroView-SC com relógio por carga), e
+grava `results/metricas_coppelia.csv` e `results/metricas_coppelia.md`. O
+teste `lento` confere se o resultado é idêntico ao versionado.
 
 **Ruído de percepção** (D56):
 
@@ -320,7 +325,41 @@ python tools\varredura_ruido.py examples\missoes\margem_ruido.toml
 São 4 níveis de erro × 10 sementes × 2 programas (`dsl` e
 `dsl_sem_cooldown`), num total de 80 linhas em `results/varredura_ruido.csv`.
 
-<!-- TODO: seção "Gravar um voo no CoppeliaSim" (comando, cena, missão) -->
+### Gravar um voo no CoppeliaSim
+
+Exige o CoppeliaSim 4.10 aberto e o extra `coppelia`. Os experimentos acima
+**não** precisam disto, porque usam as gravações versionadas.
+
+1. Abra a cena da missão **recém-carregada** (File → Open scene) e confira
+   que o título da janela mostra o nome dela. Não reaproveite uma cena que já
+   simulou, porque a repetição diverge (D58). Não salve a cena depois do voo.
+
+   | Missão | Cena | Gravação para comparar |
+   |---|---|---|
+   | `examples\missoes\borda_agua.toml` | `cenas\borda_agua.ttt` | `results\rep1\gravacao_borda_agua.jsonl` |
+   | `examples\missoes\pouso_agua.toml` | não versionada | não há (D60) |
+
+   O passo da simulação da cena deve ser de 50 ms (D50).
+2. Rode, **sempre com `--saida`**:
+
+   ```bat
+   python tools\rodar_coppelia.py examples\safe_setdown.dgl examples\missoes\borda_agua.toml --saida results\rep3
+   ```
+
+   Cada execução grava `gravacao_<missao>.jsonl` e
+   `trace_coppelia_<hospedeiro>__<missao>.jsonl`, em que `<missao>` é o
+   campo `nome` do TOML. Sem `--saida`, o destino é `results\`, e a gravação
+   de referência é sobrescrita. Para restaurá-la:
+   `git checkout -- results\gravacao_borda_agua.jsonl`.
+3. Compare com `rep1`. O resultado esperado é `quadros_divergentes 0`:
+
+   ```bat
+   python tools\comparar_gravacoes.py results\rep1\gravacao_borda_agua.jsonl results\rep3\gravacao_borda_agua.jsonl
+   ```
+
+Comparada com a referência do C4 (`results\gravacao_borda_agua.jsonl`), a
+regravação diverge em todos os 720 quadros, mas só em `pos`, com diferença
+máxima de 5,0e-8 m. Os demais campos e o trace são iguais (D58, D60).
 
 ### Tabela FIRST/FOLLOW e verificação LL(1)
 
@@ -338,9 +377,11 @@ Termina com `Conflitos LL(1): nenhum, a gramática é LL(1)` (código de saída 
 | `python tools\calibrar_relogio.py` | grava `results/calibracao.toml` (D48) |
 | `python tools\varredura_ruido.py <missao.toml>` | varredura de ruído de percepção (D56) |
 | `python tools\coppeliasim_smoke.py` | testa a conexão ZeroMQ; exige o CoppeliaSim aberto |
+| `python tools\rodar_coppelia.py <programa.dgl> <missao.toml> --saida <pasta>` | grava um voo; exige o CoppeliaSim aberto |
+| `python tools\comparar_gravacoes.py <a.jsonl> <b.jsonl>` | compara duas gravações quadro a quadro e mostra a diferença máxima por campo |
 
-<!-- TODO: rodar_coppelia, desenhar_zonas, aplicar_percepcao, comparar_gravacoes,
-     custo_injecao, custo_por_estado, resumo_varredura, trocas -->
+<!-- TODO: desenhar_zonas, aplicar_percepcao, custo_injecao, custo_por_estado,
+     resumo_varredura, trocas -->
 
 ## Estrutura do repositório
 
@@ -354,8 +395,10 @@ examples/cenarios/    cenários do hospedeiro simulado (TOML)
 examples/missoes/     missões do CoppeliaSim: zonas de solo e bateria (TOML)
 cenas/                cenas do CoppeliaSim (.ttt)
 modelo/               modelo do hospedeiro (agroview.toml)
-results/              métricas, gravações de voo, ambiente, calibração e dependências travadas
-docs/decisions.md     registro numerado das decisões de projeto (D1–D59)
+results/              métricas, gravações de referência, ambiente, calibração e dependências travadas
+results/rep1, rep2/   repetições de borda_agua com a cena versionada (D58, D60)
+results/arquivo/      repetição sem reabrir a cena, mantida como evidência (D58)
+docs/decisions.md     registro numerado das decisões de projeto (D1–D60)
 docs/manual.md        manual da linguagem
 tools/                utilitários de ambiente, calibração, CoppeliaSim e análise
 ```
@@ -368,10 +411,10 @@ tools/                utilitários de ambiente, calibração, CoppeliaSim e aná
 | `examples/baseline_sem_compensacao.dgl` | a mesma regra sem as compensações |
 | `examples/multiplas_regras.dgl` | pouso seguro + `EconomiaBateria` (regra sintética) |
 | `examples/erros_semanticos.dgl` | programa com seis erros semânticos |
-| `examples/missoes/borda_agua.toml` | missão da gravação de referência (D58) |
+| `examples/missoes/borda_agua.toml` | missão da gravação de referência (C4) e das repetições (D58) |
 | `examples/missoes/margem_ruido.toml` | parâmetros da varredura de ruído (D56) |
 | `examples/missoes/pouso_agua.toml` | missão de pouso sobre a água |
-| `cenas/borda_agua.ttt` | cena usada nas repetições da D58 |
+| `cenas/borda_agua.ttt` | cena das repetições `rep1`/`rep2` (D58); reproduz a referência do C4 a menos de 5,0e-8 m em `pos` (D60) |
 | `cenas/agro_quadcopter.ttt` | cena com as zonas desenhadas a partir da missão (D55) |
 
 ## Documentação
@@ -407,6 +450,11 @@ tools/                utilitários de ambiente, calibração, CoppeliaSim e aná
   calibrado contra um receptor real e só afeta x e y (D56).
 - A ponte com o CoppeliaSim não roda em tempo real (D49). Gravações
   idênticas exigem reabrir a cena antes de cada voo (D58).
+- As gravações de referência do C4 não são regraváveis byte a byte a partir
+  do repositório. Com a cena versionada, `borda_agua` difere da referência
+  só em `pos` (≤ 5,0e-8 m) e gera o mesmo trace. `pouso_agua` não tem cena
+  versionada. Os experimentos continuam reproduzíveis porque rodam sobre
+  as gravações (D52, D60).
 - Pontos de junção (`WHEN`), `HIGHLIGHT` e `MARK` são verificados e compilados,
   mas não alteram nenhum dos dois hospedeiros.
 - Identificadores aceitam apenas letras ASCII; não há números negativos nem
