@@ -6,7 +6,8 @@ quando, em que ordem e com quais garantias quando o orçamento de quadro
 (16,67 ms a 60 Hz) é excedido.
 
 Este repositório contém o processador completo, escrito à mão em Python, sem
-geradores de analisador, e dois hospedeiros onde as políticas são executadas:
+geradores de analisador, dois hospedeiros onde as políticas são executadas e
+uma ponte com o CoppeliaSim que fornece telemetria de voos simulados:
 
 | Fase | Módulo |
 |---|---|
@@ -20,13 +21,14 @@ geradores de analisador, e dois hospedeiros onde as políticas são executadas:
 | Contrato do hospedeiro (D40) | `src/dressgl/hospedeiro.py` |
 | Hospedeiro simulado, trace e métricas | `src/dressgl/simulador.py`, `src/dressgl/trace.py` |
 | Hospedeiro medido AgroView-SC | `src/agroview/` |
-| Matriz de experimentos | `src/dressgl/experimentos.py` |
+| Ponte com o CoppeliaSim, missões e gravações | `src/ponte_coppelia/` |
+| Matriz de experimentos | `src/dressgl/experimentos.py`, `src/ponte_coppelia/experimentos.py` |
 
 > **Versões.** A versão entregue na disciplina está na tag
 > [`v1.0`](https://github.com/EmillyeRibeiro/dressgl/tree/v1.0): processador
 > completo, hospedeiro simulado com custo de quadro modelado e 150 testes.
 > Este README descreve a versão atual, que acrescenta o hospedeiro medido
-> AgroView-SC.
+> AgroView-SC e a ponte com o CoppeliaSim.
 
 ## Hospedeiros
 
@@ -37,8 +39,8 @@ implementações:
 
 | Hospedeiro | Custo de quadro | Uso |
 |---|---|---|
-| Simulado (`dressgl.simulador`) | modelado, com parâmetros calibrados à mão | experimentos do artigo, linha de comando |
-| AgroView-SC (`agroview`) | renderização real em CPU com NumPy (D42) | medições, uso a partir de Python |
+| Simulado (`dressgl.simulador`) | modelado, com parâmetros calibrados à mão | experimentos da `v1.0`, linha de comando |
+| AgroView-SC (`agroview`) | renderização real em CPU com NumPy (D42) | medições, experimentos com física |
 
 O AgroView-SC renderiza três superfícies: FPV (320×180), MAP (128×128) e AGRO
 (96×96), nas resoluções com `scale = 1.0`, com 200 instâncias base de cultura.
@@ -54,9 +56,31 @@ sem média (D46). O relógio tem dois modos:
   próximo do tempo medido na máquina calibrada. Um número único, aplicado a
   todos os passos, continua aceito por compatibilidade.
 
-As entradas (`drone.battery`, `terrain.below`) ainda vêm do cenário. O
-CoppeliaSim só passou por um teste de conexão (`tools/coppeliasim_smoke.py`);
-a ponte de telemetria é o próximo passo.
+As entradas (`drone.battery`, `terrain.below`) vêm de uma de duas fontes: um
+cenário TOML em `examples/cenarios/` (D28) ou a gravação de um voo no
+CoppeliaSim (D52).
+
+## Ponte com o CoppeliaSim
+
+A ponte é síncrona, em modo *stepping*: a física só avança quando a ponte
+pede, e o motor continua síncrono e puro (D49). Cada passo de física tem
+50 ms e corresponde a 3 quadros de 60 Hz. Entre um passo e outro, vale a
+última leitura (D50). O passo da cena precisa ser de 50 ms.
+
+O CoppeliaSim fornece a posição do drone e o tempo simulado. `terrain.below`
+vem das zonas retangulares da missão (`examples/missoes/*.toml`); se zonas se
+sobrepõem, vale a última. `drone.battery` cai linearmente com o tempo
+simulado (D51).
+
+Cada voo é gravado em `results/gravacao_<missao>.jsonl`, que é versionado.
+A gravação inclui o alvo e o solo sob o alvo, o que separa o atraso da física
+do atraso do cooldown (D53). Ela pode ser repetida como cenário **sem o
+CoppeliaSim** (D52); por isso, os experimentos com física são reprodutíveis
+e testados. Para repetir uma gravação com resultado idêntico, reabra a cena
+antes de cada voo (D58).
+
+Um ruído de percepção Gauss-Markov pode ser aplicado sobre as gravações. Ele
+altera a posição *percebida*, sem mexer na física (D56).
 
 ## Exemplo
 
@@ -87,17 +111,22 @@ O manual completo da linguagem está em [`docs/manual.md`](docs/manual.md).
 
 - Python **3.11 ou superior** (usa `tomllib` da biblioteca padrão).
 - Git.
-- Opcional: CoppeliaSim 4.10 Edu, apenas para `tools/coppeliasim_smoke.py`.
+- Opcional: CoppeliaSim 4.10 Edu, só para gravar voos novos e para
+  `tools/coppeliasim_smoke.py`. Os experimentos com as gravações versionadas
+  não precisam dele.
 
 O núcleo `dressgl` (compilador, motor e hospedeiro simulado) usa apenas a
 biblioteca padrão. As demais dependências são extras do `pyproject.toml`:
 
 | Extra | Instala | Para quê |
 |---|---|---|
-| `dev` | pytest | testes |
+| `dev` | pytest + NumPy | testes, inclusive os do AgroView-SC e a regressão lenta |
 | `render` | NumPy | renderização do AgroView-SC |
-| `coppelia` | `coppeliasim-zmqremoteapi-client` | `tools/coppeliasim_smoke.py` |
+| `coppelia` | `coppeliasim-zmqremoteapi-client` | comunicação com o CoppeliaSim aberto |
 | `gui` | NumPy + PySide6 | reservado para a janela do AgroView-SC, que ainda não existe |
+
+As versões usadas nos resultados versionados estão em
+`results/requirements-lock.txt`.
 
 ## Instalação
 
@@ -109,7 +138,7 @@ cd dressgl
 python -m venv .venv
 .venv\Scripts\activate
 python -m pip install --upgrade pip
-pip install -e ".[dev,render,coppelia]"
+pip install -e ".[dev]"
 ```
 
 Linux/macOS:
@@ -120,8 +149,10 @@ cd dressgl
 python3 -m venv .venv
 source .venv/bin/activate
 python -m pip install --upgrade pip
-pip install -e ".[dev,render,coppelia]"
+pip install -e ".[dev]"
 ```
+
+Para gravar voos com o CoppeliaSim aberto, instale `".[dev,coppelia]"`.
 
 Verifique a instalação:
 
@@ -129,8 +160,16 @@ Verifique a instalação:
 python -m pytest -q
 ```
 
-Saída esperada: `195 passed`. Os testes do AgroView-SC precisam do NumPy
-(extra `render`).
+Saída esperada: `222 passed, 1 deselected`. O teste deixado de fora tem o
+marcador `lento` (D59). Ele regenera `results/metricas_coppelia.csv`, leva
+cerca de 1 min e deve ser rodado antes de commitar mudanças em `results/`,
+`src/ponte_coppelia` ou `src/agroview`:
+
+```bat
+python -m pytest -q -m lento
+```
+
+Saída esperada: `1 passed, 222 deselected`.
 
 ## Uso
 
@@ -194,11 +233,11 @@ Imprime as métricas e grava `results\trace_<nome do cenário>.jsonl`. Use
 termina com um *traceback* de `ErroCompilacao`; nesse caso, rode antes
 `dressgl.semantica`.
 
-### Usar o hospedeiro AgroView-SC
+### Usar o hospedeiro AgroView-SC a partir de Python
 
-O AgroView-SC ainda não tem comando de linha nem janela; ele é usado a partir
-de Python. O cenário precisa apenas de uma lista `entradas`, com um dicionário
-de telemetria por quadro:
+O AgroView-SC não tem janela. Fora dos experimentos com física, ele é usado a
+partir de Python. O cenário precisa apenas de uma lista `entradas`, com um
+dicionário de telemetria por quadro:
 
 ```python
 from types import SimpleNamespace
@@ -247,15 +286,41 @@ com AGRO vale ≈ 5,1 ms. Recalibre ao trocar de máquina.
 
 ### Reproduzir os experimentos do artigo
 
+O escopo da avaliação é um cenário excepcional (bateria em reserva sobre solo
+impróprio) em sete condições (D57). Os três comandos abaixo regeneram as
+tabelas versionadas em `results/`.
+
+**Hospedeiro simulado, cenários TOML** (os mesmos experimentos da `v1.0`):
+
 ```bat
 python -m dressgl.experimentos
 ```
 
-Executa 4 programas × 3 cenários no hospedeiro simulado e grava
-`results/metricas.csv`, `results/metricas.md` e 12 traces
-`results/trace_<programa>__<cenario>.jsonl`. Os traces não são versionados
-(`.gitignore`); as tabelas de métricas são. Os experimentos são os mesmos da
-`v1.0` e ainda não usam o AgroView-SC.
+Executa 4 programas × 3 cenários e grava `results/metricas.csv`,
+`results/metricas.md` e 12 traces `results/trace_<programa>__<cenario>.jsonl`.
+Os traces não são versionados (`.gitignore`); as tabelas de métricas são.
+
+**Gravações de voo, sem o CoppeliaSim** (D54):
+
+```bat
+python -m ponte_coppelia.experimentos --gravacoes results --saida results --hospedeiros simulado agroview
+```
+
+Executa os mesmos 4 programas sobre as gravações de `results/`, nos dois
+hospedeiros (o AgroView-SC com relógio por carga), e grava
+`results/metricas_coppelia.csv` e `results/metricas_coppelia.md`. O teste
+`lento` confere se o resultado é idêntico ao versionado.
+
+**Ruído de percepção** (D56):
+
+```bat
+python tools\varredura_ruido.py examples\missoes\margem_ruido.toml
+```
+
+São 4 níveis de erro × 10 sementes × 2 programas (`dsl` e
+`dsl_sem_cooldown`), num total de 80 linhas em `results/varredura_ruido.csv`.
+
+<!-- TODO: seção "Gravar um voo no CoppeliaSim" (comando, cena, missão) -->
 
 ### Tabela FIRST/FOLLOW e verificação LL(1)
 
@@ -271,21 +336,28 @@ Termina com `Conflitos LL(1): nenhum, a gramática é LL(1)` (código de saída 
 |---|---|
 | `python tools\env_report.py` | grava `results/ambiente.json` (SO, CPU, Python) |
 | `python tools\calibrar_relogio.py` | grava `results/calibracao.toml` (D48) |
+| `python tools\varredura_ruido.py <missao.toml>` | varredura de ruído de percepção (D56) |
 | `python tools\coppeliasim_smoke.py` | testa a conexão ZeroMQ; exige o CoppeliaSim aberto |
+
+<!-- TODO: rodar_coppelia, desenhar_zonas, aplicar_percepcao, comparar_gravacoes,
+     custo_injecao, custo_por_estado, resumo_varredura, trocas -->
 
 ## Estrutura do repositório
 
 ```text
-src/dressgl/        processador, contrato do hospedeiro e hospedeiro simulado
-src/agroview/       hospedeiro medido AgroView-SC (ordem dos passos, render em CPU, calibração)
-tests/              testes automatizados (pytest)
-examples/           programas .dgl de exemplo
-examples/cenarios/  cenários do hospedeiro simulado (TOML)
-modelo/             modelo do hospedeiro (agroview.toml)
-results/            métricas, ambiente, calibração e dependências travadas
-docs/decisions.md   registro numerado das decisões de projeto (D1–D48)
-docs/manual.md      manual da linguagem
-tools/              utilitários de ambiente, calibração e CoppeliaSim
+src/dressgl/          processador, contrato do hospedeiro e hospedeiro simulado
+src/agroview/         hospedeiro medido AgroView-SC (ordem dos passos, render em CPU, calibração)
+src/ponte_coppelia/   ponte com o CoppeliaSim, missões, gravações, ruído de percepção e experimentos
+tests/                testes automatizados (pytest)
+examples/             programas .dgl de exemplo
+examples/cenarios/    cenários do hospedeiro simulado (TOML)
+examples/missoes/     missões do CoppeliaSim: zonas de solo e bateria (TOML)
+cenas/                cenas do CoppeliaSim (.ttt)
+modelo/               modelo do hospedeiro (agroview.toml)
+results/              métricas, gravações de voo, ambiente, calibração e dependências travadas
+docs/decisions.md     registro numerado das decisões de projeto (D1–D59)
+docs/manual.md        manual da linguagem
+tools/                utilitários de ambiente, calibração, CoppeliaSim e análise
 ```
 
 ## Exemplos incluídos
@@ -296,6 +368,11 @@ tools/              utilitários de ambiente, calibração e CoppeliaSim
 | `examples/baseline_sem_compensacao.dgl` | a mesma regra sem as compensações |
 | `examples/multiplas_regras.dgl` | pouso seguro + `EconomiaBateria` (regra sintética) |
 | `examples/erros_semanticos.dgl` | programa com seis erros semânticos |
+| `examples/missoes/borda_agua.toml` | missão da gravação de referência (D58) |
+| `examples/missoes/margem_ruido.toml` | parâmetros da varredura de ruído (D56) |
+| `examples/missoes/pouso_agua.toml` | missão de pouso sobre a água |
+| `cenas/borda_agua.ttt` | cena usada nas repetições da D58 |
+| `cenas/agro_quadcopter.ttt` | cena com as zonas desenhadas a partir da missão (D55) |
 
 ## Documentação
 
@@ -305,11 +382,12 @@ tools/              utilitários de ambiente, calibração e CoppeliaSim
 
 ## Limitações conhecidas
 
+- A avaliação cobre um único cenário excepcional, em sete condições. Os
+  outros cinco cenários da Seção III-A do artigo ficam como trabalho futuro
+  (D57).
 - O AgroView-SC renderiza em CPU (NumPy), não em GPU, e em resolução reduzida.
   Os tempos medidos refletem esse renderizador, não um compositor gráfico de
-  produção.
-- O AgroView-SC ainda não tem comando de linha nem janela, e os experimentos
-  do artigo continuam no hospedeiro simulado.
+  produção. O AgroView-SC também não tem janela.
 - O relógio por carga é linear e não tem termo fixo por passo. Passos com
   custo fixo relevante (por exemplo, `CropInstancesPass`) ficam subestimados
   quando a carga cai.
@@ -319,10 +397,18 @@ tools/              utilitários de ambiente, calibração e CoppeliaSim
   `carga` tende a ficar um pouco abaixo do modo `tempo`. A calibração vale
   para a máquina em que foi feita.
 - O hospedeiro simulado mantém o custo modelado da `v1.0`, com parâmetros
-  calibrados à mão.
+  calibrados à mão. Ele usa custo médio, e o AgroView-SC usa o custo do
+  quadro, com os picos da decimação (D43, D46).
+- A bateria é modelada como linear no tempo simulado, sem relação com o
+  empuxo dos motores (D51).
+- `terrain.below` vem de zonas retangulares da missão, e a classificação do
+  solo é perfeita, dada a posição.
+- A cena tem escala reduzida (campo de 5 m). O ruído de percepção não foi
+  calibrado contra um receptor real e só afeta x e y (D56).
+- A ponte com o CoppeliaSim não roda em tempo real (D49). Gravações
+  idênticas exigem reabrir a cena antes de cada voo (D58).
 - Pontos de junção (`WHEN`), `HIGHLIGHT` e `MARK` são verificados e compilados,
   mas não alteram nenhum dos dois hospedeiros.
-- As entradas do AgroView-SC ainda vêm do cenário, não do CoppeliaSim.
 - Identificadores aceitam apenas letras ASCII; não há números negativos nem
   conversão de unidades.
 

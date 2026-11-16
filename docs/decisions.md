@@ -60,7 +60,7 @@
 | D56 | Ruído de percepção Gauss-Markov sobre gravações físicas, com parâmetros e hipótese fixados antes da execução | Ver D56 em Detalhes |
 | D57 | Escopo da avaliação: um cenário excepcional (bateria em reserva sobre solo impróprio) em sete condições: operação normal, ativação com compensação, oscilação sintética, oscilação física, ruído no custo, ruído na percepção e composição de regras. Os outros cinco cenários da Seção III-A ficam como trabalho futuro | O roteiro da disciplina não fixa um número de cenários; os cinco restantes exigem telemetria que o modelo não declara |
 | D58 | Gravação de referência de borda_agua: `results/gravacao_borda_agua.jsonl`. `results/rep1` e `results/rep2` são repetições a partir da cena `cenas/borda_agua.ttt` recém-aberta; `results/arquivo` guarda uma repetição sem reabrir a cena, mantida como evidência | rep1 = rep2 (mesmo hash); diferem da referência só em `pos`, no máximo 5,0e-8 m, e geram o mesmo trace. A repetição sem reabrir a cena divergiu |
-
+| D59 | `numpy` entra no extra `dev` (o pacote continua sem dependências obrigatórias; o compilador e o simulador usam só a biblioteca padrão). O teste de regressão do `metricas_coppelia.csv` (~1 min) recebe o marcador `lento`, sai do `pytest -q` padrão e é pulado se faltar `numpy`. `--strict-markers` ativado | Um clone novo com `pip install -e ".[dev]"` falhou por falta de `numpy`, que só estava no `.venv` local. Rodar `python -m pytest -q -m lento` antes de commitar mudanças em `results/`, `src/ponte_coppelia` ou `src/agroview` |
 ## Detalhes
 
 ### D48 — Relógio por carga calibrado por passo
@@ -126,4 +126,3 @@ sem nenhuma semente em sentido contrário (teste do sinal unilateral: p = 0,125;
 3 ativações. `retencoes(dsl) > 0` em 30/30 sementes com ruído (faixas 4–24, 4–29, 13–38).
 A hipótese se confirma em σ = 0,05 e 0,10 m e falha em σ = 0,02 m na primeira parte (3/10 não é maioria).
 Os parâmetros não foram alterados depois dos resultados.
-| D59 | `numpy` entra no extra `dev` (o pacote continua sem dependências obrigatórias; o compilador e o simulador usam só a biblioteca padrão). O teste de regressão do `metricas_coppelia.csv` (~1 min) recebe o marcador `lento`, sai do `pytest -q` padrão e é pulado se faltar `numpy`. `--strict-markers` ativado | Um clone novo com `pip install -e ".[dev]"` falhou por falta de `numpy`, que só estava no `.venv` local. Rodar `python -m pytest -q -m lento` antes de commitar mudanças em `results/`, `src/ponte_coppelia` ou `src/agroview` |
