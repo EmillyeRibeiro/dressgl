@@ -1,4 +1,5 @@
 """Regressão: os CSVs versionados em results/ são reproduzíveis a partir do código."""
+import pytest
 import csv
 import importlib.util
 import tomllib
@@ -40,8 +41,9 @@ def test_varredura_ruido_reproduz_csv(tmp_path):
     assert len(esperado) == len(vr.ERROS) * len(vr.SEMENTES) * len(vr.PROGRAMAS)  # 80
     _comparar(esperado, _ler(novo))
 
-
+@pytest.mark.lento
 def test_metricas_coppelia_reproduz_csv(tmp_path):
+    pytest.importorskip("numpy")
     from ponte_coppelia import experimentos as ex
     esperado = _ler(RAIZ / "results" / "metricas_coppelia.csv")
     # mesmos hospedeiros do CSV versionado, na ordem em que aparecem nele
