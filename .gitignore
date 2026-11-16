@@ -13,3 +13,5 @@ __pycache__/
 docs/decision.docx
 # Traces regeneráveis (D30); o resto de results/ é versionado (D38)
 results/trace_*.jsonl
+# Gravações percebidas (D56): regeneráveis por tools/varredura_ruido.py
+results/percepcao/
