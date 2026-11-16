@@ -61,6 +61,7 @@
 | D57 | Escopo da avaliação: um cenário excepcional (bateria em reserva sobre solo impróprio) em sete condições: operação normal, ativação com compensação, oscilação sintética, oscilação física, ruído no custo, ruído na percepção e composição de regras. Os outros cinco cenários da Seção III-A ficam como trabalho futuro | O roteiro da disciplina não fixa um número de cenários; os cinco restantes exigem telemetria que o modelo não declara |
 | D58 | Gravação de referência de borda_agua: `results/gravacao_borda_agua.jsonl`. `results/rep1` e `results/rep2` são repetições a partir da cena `cenas/borda_agua.ttt` recém-aberta; `results/arquivo` guarda uma repetição sem reabrir a cena, mantida como evidência | rep1 = rep2 (mesmo hash); diferem da referência só em `pos`, no máximo 5,0e-8 m, e geram o mesmo trace. A repetição sem reabrir a cena divergiu |
 | D59 | `numpy` entra no extra `dev` (o pacote continua sem dependências obrigatórias; o compilador e o simulador usam só a biblioteca padrão). O teste de regressão do `metricas_coppelia.csv` (~1 min) recebe o marcador `lento`, sai do `pytest -q` padrão e é pulado se faltar `numpy`. `--strict-markers` ativado | Um clone novo com `pip install -e ".[dev]"` falhou por falta de `numpy`, que só estava no `.venv` local. Rodar `python -m pytest -q -m lento` antes de commitar mudanças em `results/`, `src/ponte_coppelia` ou `src/agroview` |
+| D60 | A gravação de referência do C4 é mantida. A regravação com `cenas/borda_agua.ttt` é equivalente, mas não idêntica byte a byte; `results/rep1` passa a ser a gravação de comparação | Ver D60 em Detalhes |
 
 ## Detalhes
 
@@ -127,5 +128,42 @@ sem nenhuma semente em sentido contrário (teste do sinal unilateral: p = 0,125;
 3 ativações. `retencoes(dsl) > 0` em 30/30 sementes com ruído (faixas 4–24, 4–29, 13–38).
 A hipótese se confirma em σ = 0,05 e 0,10 m e falha em σ = 0,02 m na primeira parte (3/10 não é maioria).
 Os parâmetros não foram alterados depois dos resultados.
+### D60 — Gravação de referência equivalente, mas não idêntica
 
-| D60 | A gravação de referência do C4 é mantida. A regravação com `cenas/borda_agua.ttt` é equivalente, mas não idêntica byte a byte; `results/rep1` passa a ser a gravação de comparação | Ver D60 em Detalhes |
+**Contexto.** `results/gravacao_borda_agua.jsonl` e
+`results/gravacao_pouso_agua.jsonl` entraram no C4 (`a7686a4`, 16/11 00:21)
+e não mudaram desde então. A cena `cenas/borda_agua.ttt` só foi salva às
+16:06 e versionada na D58 (`2ab2a8a`). As repetições `rep1` e `rep2`, feitas
+reabrindo essa cena (D58), são idênticas byte a byte entre si, mas diferem
+da referência. Segundo `tools/comparar_gravacoes.py`, os 720 quadros
+divergem, mas só em `pos`, com diferença máxima de 5,0e-8 m.
+`drone.battery`, `terrain.below`, `alvo` e `solo_alvo` são iguais, e o trace
+também (D58). Já no quadro 0, a referência traz a posição com resíduos de
+float32 (`-0.5500000074505806`), e `rep1`, não (`-0.55`).
+
+**Causa provável.** A cena. Entre `a7686a4` e `8ab459d`, `tools/rodar_coppelia.py`
+e `examples/missoes/borda_agua.toml` não mudaram (`git diff --stat` vazio). Em
+`src/ponte_coppelia`, as mudanças só acrescentam o módulo de percepção (D56),
+sem arredondar `pos`. O estado da cena usado no C4 não foi salvo, e a posição
+inicial dele estava, provavelmente, em precisão simples.
+
+**Decisão.** Manter as gravações do C4 como referência dos experimentos.
+Elas registram um estado da cena que não está versionado e não podem ser
+regravadas byte a byte a partir do repositório.
+`results/rep1/gravacao_borda_agua.jsonl` passa a ser a gravação de
+comparação: voos novos com `cenas/borda_agua.ttt` são comparados com ela, e
+não com a referência.
+
+**Consequências.**
+- A matriz do C4 (D53–D55) e `results/metricas_coppelia.csv` continuam
+  válidas: os experimentos rodam sobre a gravação, e a D52 garante a
+  reprodução sem o CoppeliaSim. O teste `lento` (D59) continua conferindo isso.
+- Regravar o voo reproduz a referência a menos de 5,0e-8 m em `pos`. A
+  igualdade byte a byte vale em relação a `rep1`.
+- `pouso_agua` também foi gravada no C4 e não tem cena versionada. Fica no
+  mesmo caso, sem uma repetição reproduzível.
+- Nenhuma execução pode gravar em `results/` sem `--saida`, porque isso
+  sobrescreveria a referência. A cópia do git permite restaurá-la
+  (`git checkout -- results/gravacao_borda_agua.jsonl`).
+- Trabalho futuro: gravar uma linha de cabeçalho com a cena, a missão e o
+  commit em cada gravação. O `carregar_gravacao` teria que ignorar essa linha.
