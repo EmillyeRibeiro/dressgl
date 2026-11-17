@@ -5,10 +5,13 @@ import time
 import tkinter as tk
 from tkinter import ttk
 
-from .imagem import ampliar, para_ppm
+from .imagem import ajustar, para_ppm
 
 ORCAMENTO_MS = 16.67
-SUPERFICIES = {"FPV": (320, 180, 2), "MAP": (128, 128, 3), "AGRO": (96, 96, 3)}
+# Tamanho de exibição (largura, altura), independente da resolução do render (2× a nominal).
+SUPERFICIES = {"FPV": (640, 360), "MAP": (256, 256), "AGRO": (192, 192)}
+# (linha, coluna, rowspan): MAP e AGRO empilhados ao lado do FPV para caber em 1920 px a 125 %.
+POSICOES = {"FPV": (0, 0, 2), "MAP": (0, 1, 1), "AGRO": (1, 1, 1)}
 LARG_GRAF, ALT_GRAF, ESCALA_MS = 900, 140, 20.0
 CAMPO_PX, CAMPO_M = 250, 5.0          # campo de 5 × 5 m, de -2,5 a 2,5
 CORES_SOLO = {"BARE_SOIL": "#c9a678", "STANDING_CROP": "#6aa84f", "WATER": "#3d85c6"}
@@ -34,15 +37,16 @@ class Janela:
     def _montar(self):
         topo = ttk.Frame(self.raiz)
         topo.grid(row=0, column=0, sticky="nw", padx=6, pady=6)
-        self.fotos = {}
-        for col, (nome, (w, h, k)) in enumerate(SUPERFICIES.items()):
+        self.fotos, self.telas = {}, {}
+        for nome, (w, h) in SUPERFICIES.items():
+            lin, col, span = POSICOES[nome]
             quadro = ttk.LabelFrame(topo, text=nome)
-            quadro.grid(row=0, column=col, padx=4, sticky="n")
-            tela = tk.Canvas(quadro, width=w * k, height=h * k, bg="black",
-                             highlightthickness=0)
+            quadro.grid(row=lin, column=col, rowspan=span, padx=4, pady=(0, 4), sticky="nw")
+            tela = tk.Canvas(quadro, width=w, height=h, bg="black", highlightthickness=0)
             tela.pack()
-            self.fotos[nome] = tk.PhotoImage(width=w * k, height=h * k)
+            self.fotos[nome] = tk.PhotoImage(width=w, height=h)
             tela.create_image(0, 0, anchor="nw", image=self.fotos[nome])
+            self.telas[nome] = tela
 
         lateral = ttk.Frame(self.raiz)
         lateral.grid(row=0, column=1, sticky="n", padx=6, pady=6)
@@ -56,8 +60,9 @@ class Janela:
                   ("fps", "Quadros/s reais")]
         self.v = {k: tk.StringVar(value="–") for k, _ in campos}
         for i, (k, rotulo) in enumerate(campos):
-            ttk.Label(painel, text=rotulo).grid(row=i, column=0, sticky="w", padx=4)
-            ttk.Label(painel, textvariable=self.v[k], font=("Consolas", 11)
+            ttk.Label(painel, text=rotulo).grid(row=i, column=0, sticky="nw", padx=4)
+            ttk.Label(painel, textvariable=self.v[k], font=("Consolas", 11),
+                      wraplength=200 if k == "ativas" else 0, justify="left"
                       ).grid(row=i, column=1, sticky="w", padx=4)
 
         caixa = ttk.LabelFrame(lateral, text="Campo 5 × 5 m")
@@ -93,7 +98,7 @@ class Janela:
     def _desenhar_campo(self):
         c = self.campo
         # Desenhadas na ordem do TOML: a zona posterior fica por cima.
-        # ADAPTAR: confirmar que o hospedeiro resolve sobreposição do mesmo jeito.
+        # ADAPTAR: confirmar com ponte_coppelia/missao.py (solo_em) que a precedência é a mesma.
         for z in self.zonas:
             x0, y0 = self._m(z["x"][0], z["y"][1])
             x1, y1 = self._m(z["x"][1], z["y"][0])
@@ -139,6 +144,11 @@ class Janela:
         self.campo.delete("rastro")
         self._mover(self.pt_real, None)
         self._mover(self.pt_perc, None)
+        for nome, (w, h) in SUPERFICIES.items():
+            self.fotos[nome].blank()
+            t = self.telas[nome]
+            t.delete("aviso")
+            t.create_text(w // 2, h // 2, text="sem imagem", fill="gray60", tags="aviso")
 
     def _alternar(self):
         self.tocando = not self.tocando
@@ -193,8 +203,9 @@ class Janela:
         if q is None:
             return
         for nome, img in self.ultima_img.items():
-            k = SUPERFICIES[nome][2]
-            self.fotos[nome].configure(data=para_ppm(ampliar(img, k)), format="PPM")
+            w, h = SUPERFICIES[nome]
+            self.fotos[nome].configure(data=para_ppm(ajustar(img, h, w)), format="PPM")
+            self.telas[nome].delete("aviso")
         self.ultima_img = {}
         L = q.leituras
         bat = L.get("drone.battery")

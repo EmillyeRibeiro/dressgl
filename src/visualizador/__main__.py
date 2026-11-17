@@ -34,8 +34,10 @@ def main():
                zonas=missao.get("zonas", ()),
                waypoints=missao.get("waypoints", ()))
     raiz.protocol("WM_DELETE_WINDOW", j.fechar)
-    raiz.mainloop()
-
+        try:
+            raiz.mainloop()
+        except KeyboardInterrupt:        # Ctrl+C no console: fecha sem traceback
+            j.fechar()
 
 if __name__ == "__main__":
     main()
