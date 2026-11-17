@@ -1,0 +1,1928 @@
+%=======================================================================
+%  Projeto Final - Teoria da Computacao e Compiladores
+%  DRESS-GL: artigo final, versao 3 (dois hospedeiros e ponte CoppeliaSim)
+%  Template: IEEE Conference Template (Official) - compilar com pdfLaTeX
+%=======================================================================
+\documentclass[conference]{IEEEtran}
+\IEEEoverridecommandlockouts
+
+\usepackage{cite}
+\usepackage{amsmath,amssymb,amsfonts}
+\usepackage{graphicx}
+\usepackage{textcomp}
+\usepackage{xcolor}
+\usepackage{array}
+\usepackage{tabularx}
+\usepackage[utf8]{inputenc}
+\usepackage[T1]{fontenc}
+\usepackage[brazilian]{babel}
+\usepackage{microtype}
+\usepackage{listings}
+\usepackage{booktabs}
+\usepackage{url}
+\usepackage{adjustbox}
+\usepackage{tikz}
+\usetikzlibrary{automata,positioning,arrows.meta,babel}
+
+% Aspas retas aparecem no codigo da DSL; desliga o atalho " do babel.
+\AtBeginDocument{\shorthandoff{"}}
+
+% Quebra de URL apenas em barras, pontos e hifens.
+\def\UrlBreaks{\do\/\do.\do-}
+
+% Evita linhas que invadem a margem.
+\setlength{\emergencystretch}{1.5em}
+
+% Mais espaco para floats (evita tabelas depois das referencias).
+\renewcommand{\topfraction}{0.9}
+\renewcommand{\bottomfraction}{0.8}
+\renewcommand{\textfraction}{0.07}
+\renewcommand{\floatpagefraction}{0.8}
+\renewcommand{\dbltopfraction}{0.9}
+\renewcommand{\dblfloatpagefraction}{0.8}
+\setcounter{topnumber}{3}
+\setcounter{dbltopnumber}{3}
+\setcounter{totalnumber}{5}
+
+% Coluna X alinhada a esquerda (tabularx) e cabecalho em duas linhas.
+\newcolumntype{L}{>{\raggedright\arraybackslash}X}
+\newcommand{\cab}[1]{\begin{tabular}[b]{@{}c@{}}#1\end{tabular}}
+\renewcommand{\lstlistingname}{Listagem}
+% Listagem + legenda em bloco indivisivel, com legenda na largura da coluna.
+\newenvironment{blocolst}%
+  {\par\medskip\noindent\begin{minipage}{\columnwidth}}%
+  {\end{minipage}\par\medskip}
+% \legendalst{rotulo}{texto}: numera pelo mesmo contador do listings.
+\newcommand{\legendalst}[2]{%
+  \par\vspace{2pt}%
+  \refstepcounter{lstlisting}\label{#1}%
+  {\footnotesize\lstlistingname~\thelstlisting.\enspace #2\par}}
+\renewcommand{\IEEEkeywordsname}{Palavras-chave}
+
+%----- realce de sintaxe -----
+\lstdefinelanguage{DRESSGL}{
+  morekeywords={POLICY,RULE,PRIORITY,GIVEN,WHEN,THEN,ASSERT,END,
+                BEFORE,AFTER,AROUND,AND,OR,NOT,IN,SET,SCALE,INJECT,
+                SUPPRESS,HIGHLIGHT,MARK,STALE,ARGMAX,ARGMIN,WITHIN,
+                BY,view,pass,instances,resolution,budget,reserve,cooldown},
+  morekeywords=[2]{ms,Hz,frames},
+  morecomment=[l]{\#},
+  morestring=[b]",
+  sensitive=true
+}
+\lstset{
+  basicstyle=\ttfamily\scriptsize,
+  keywordstyle=\bfseries,
+  keywordstyle=[2]\itshape,
+  commentstyle=\itshape\color{gray},
+  stringstyle=\color{black!70},
+  numbers=left, numberstyle=\tiny, numbersep=4pt,
+  frame=single, framesep=3pt,
+  columns=fullflexible, keepspaces=true,
+  breaklines=true, breakatwhitespace=true,
+  postbreak=\mbox{\textcolor{gray}{$\hookrightarrow$}\space},
+  captionpos=b, xleftmargin=12pt,
+  linewidth=\dimexpr\columnwidth-12pt\relax,
+  showstringspaces=false,
+  upquote=true,
+  extendedchars=true,
+  literate={á}{{\'a}}1 {à}{{\`a}}1 {â}{{\^a}}1 {ã}{{\~a}}1
+           {é}{{\'e}}1 {ê}{{\^e}}1 {í}{{\'\i}}1
+           {ó}{{\'o}}1 {ô}{{\^o}}1 {õ}{{\~o}}1 {ú}{{\'u}}1 {ü}{{\"u}}1
+           {ç}{{\c c}}1
+           {Á}{{\'A}}1 {À}{{\`A}}1 {Â}{{\^A}}1 {Ã}{{\~A}}1
+           {É}{{\'E}}1 {Ê}{{\^E}}1 {Í}{{\'I}}1
+           {Ó}{{\'O}}1 {Ô}{{\^O}}1 {Õ}{{\~O}}1 {Ú}{{\'U}}1 {Ç}{{\c C}}1
+}
+\lstdefinestyle{saida}{numbers=none, xleftmargin=0pt, linewidth=\columnwidth,
+  basicstyle=\ttfamily\tiny, keywordstyle=, stringstyle=,
+  breakindent=1.5em}
+\lstdefinestyle{dsl}{language=DRESSGL,
+  basicstyle=\ttfamily\fontsize{6.5}{7.8}\selectfont}
+  \DeclareMathSizes{6.5}{6.5}{5}{5}
+\begin{document}
+
+\title{DRESS-GL: uma linguagem específica de domínio para especificação
+declarativa e verificável de políticas de degradação gráfica em estações de
+controle de VANT}
+
+%----- Bloco de autoria em tres colunas fixas (autores lado a lado).
+\author{%
+\begin{tabular}{@{}
+  >{\centering\arraybackslash}m{0.30\textwidth}@{\hspace{2pt}}
+  >{\centering\arraybackslash}m{0.36\textwidth}@{\hspace{2pt}}
+  >{\centering\arraybackslash}m{0.30\textwidth}@{}}
+Caroline Silva Grizante &
+Emilly Emanuely Ribeiro dos Santos &
+Marcela Lovatto \\[2pt]
+\textit{Engenharia de Computação} &
+\textit{Engenharia de Computação} &
+\textit{Engenharia de Computação} \\
+\textit{Centro Universitário da} &
+\textit{Centro Universitário da} &
+\textit{Centro Universitário da} \\
+\textit{Fundação Hermínio Ometto} &
+\textit{Fundação Hermínio Ometto} &
+\textit{Fundação Hermínio Ometto} \\
+Araras, SP, Brasil &
+Araras, SP, Brasil &
+Araras, SP, Brasil \\[1pt]
+{\footnotesize carolinegrizante105@alunos.fho.edu.br} &
+{\footnotesize emillyribeiro@alunos.fho.edu.br} &
+{\footnotesize marcela.lovatto@alunos.fho.edu.br}
+\end{tabular}
+}
+
+\maketitle
+
+%=======================================================================
+\begin{abstract}
+Estações de controle de solo de veículos aéreos não tripulados exibem
+superfícies gráficas de criticidade desigual. Quando o orçamento por quadro é
+excedido, decidir qual superfície degradar, e em que grau, é uma decisão de
+segurança, em geral codificada em linguagens de propósito geral, sem
+verificação automática. Este trabalho apresenta a DRESS-GL, linguagem
+específica de domínio externa e não Turing-completa, que expressa essas
+políticas no gabarito Dado-Quando-Então, com pontos de junção sobre os passos
+de renderização; sem laços nem recursão, cada programa termina por construção.
+O processador, escrito em Python sem geradores de analisador, combina análise
+léxica por autômato finito determinístico, análise descendente recursiva sobre
+gramática cuja propriedade LL(1) é verificada automaticamente e oito
+verificações semânticas derivadas do modelo do hospedeiro, e compila as regras
+em uma representação intermediária executada por quadro. As políticas
+executam, pelo mesmo contrato, em um hospedeiro de custo modelado e no
+AgroView-SC, que renderiza em CPU, alimentados por telemetria gravada no
+CoppeliaSim. A avaliação examina um cenário excepcional, bateria em reserva
+sobre superfície imprópria para pouso, em sete condições. No hospedeiro
+simulado, a política manteve todos os quadros no orçamento de 16,67\,ms,
+enquanto uma variante sem compensações o excedeu em 13,33\,\% dos quadros. No
+AgroView-SC, com relógio por carga calibrado, nenhum programa o excedeu (pior
+quadro de 14,33\,ms): a vantagem das compensações depende do modelo de custo.
+Com erro de posição de até 0,1\,m, o período mínimo entre reconfigurações
+reduziu as transições espúrias em 11\,\% a 22\,\%, sem eliminá-las.
+\end{abstract}
+
+\begin{IEEEkeywords}
+linguagens específicas de domínio, autômatos finitos, gramáticas livres de
+contexto, análise sintática LL(1), análise semântica, sistemas
+auto-adaptativos, veículos aéreos não tripulados
+\end{IEEEkeywords}
+
+%=======================================================================
+\section{Introdução}
+\label{sec:introducao}
+
+\subsection{Contexto e domínio}
+\label{sec:dominio}
+
+O domínio deste trabalho é a \textit{especificação de políticas de degradação
+gráfica adaptativa em estações de controle de solo} (\textit{Ground Control
+Stations}, GCS) \textit{de veículos aéreos não tripulados} (VANT)
+\textit{de uso agrícola}.
+
+Uma GCS compõe, em um único dispositivo de exibição, superfícies gráficas
+heterogêneas: a visão em primeira pessoa transmitida pela aeronave, o mapa de
+missão com a rota de pulverização, camadas agronômicas derivadas de índices de
+vegetação e um painel de telemetria. Essas superfícies possuem
+\textbf{criticidade operacional desigual}. A perda momentânea de atualização da
+camada agronômica é irrelevante para a segurança do voo; a mesma perda na visão
+em primeira pessoa, durante uma manobra manual, pode ser determinante. A
+criticidade tampouco é constante: um mapa de aptidão de pouso é acessório em
+voo nominal e torna-se a informação mais importante da tela quando a bateria
+entra em reserva.
+
+A composição opera sob \textbf{orçamento temporal rígido}: 16,67\,ms por quadro
+para 60\,Hz. Quando a carga excede o orçamento, algo precisa ser sacrificado:
+resolução de renderização, frequência de atualização, densidade de geometria ou
+a própria presença de uma superfície. Decidir \textit{o que} sacrificar,
+\textit{em que ordem}, \textit{sob quais condições de telemetria} e \textit{com
+quais garantias mínimas preservadas} é o objeto deste domínio.
+
+Trata-se de uma decisão simultaneamente de engenharia gráfica, de agronomia de
+precisão e de segurança operacional. Os especialistas que detêm o conhecimento
+necessário para formulá-la, como o agrônomo que estabelece a relevância das
+camadas e o piloto que conhece o procedimento de emergência, não são, em geral,
+programadores de sistemas gráficos. Essa separação entre quem detém o
+conhecimento do domínio e quem detém o conhecimento da implementação é a
+condição que van Deursen \textit{et al.}~\cite{vandeursen2000} identificam como
+favorável à adoção de uma linguagem dedicada.
+
+O sistema hospedeiro-alvo é o \textbf{AgroView-SC}, compositor gráfico de GCS
+desenvolvido pelos autores. O processador não depende do código do compositor:
+conhece-o apenas por um modelo declarativo (\texttt{modelo/agroview.toml}), que
+descreve superfícies, passos de renderização, instâncias e telemetria, e por
+um contrato de hospedeiro, que fixa a troca de planos e leituras a cada quadro.
+Neste trabalho, as políticas são executadas em dois hospedeiros que implementam
+esse contrato: um hospedeiro simulado, de custo modelado
+(Seção~\ref{sec:hospedeiro}), e uma versão reduzida do AgroView-SC que
+renderiza em CPU e mede o custo de cada quadro (Seção~\ref{sec:agroview}),
+alimentada por telemetria gravada no simulador físico CoppeliaSim
+(Seção~\ref{sec:ponte}).
+
+\subsection{Por que uma DSL e não uma linguagem de propósito geral}
+\label{sec:relevancia}
+
+Na versão anterior do AgroView-SC, descartada na reimplementação, as políticas
+de degradação eram funções em Python registradas em um motor de adaptação. A
+Listagem~\ref{lst:python} reconstrói, nesse estilo, a política acionada por
+bateria em reserva; a Listagem~\ref{lst:exemplo}, na
+Seção~\ref{sec:gramatica}, expressa a mesma intenção em DRESS-GL.
+
+\begin{blocolst}
+\begin{lstlisting}[language=Python]
+def r_setdown(v, w):
+    w["show_land"]   = 1
+    w["land_target"] = best_landing_site(w)
+    v["MAP"].mode       = 2
+    v["AGRO"].target_hz = 2.0
+    v["FPV"].crop_ratio = 0.25
+
+E.add(Rule("SafeSetdownAssist", 90,
+           lambda t, w: t.battery < 18.0, r_setdown))
+\end{lstlisting}
+\legendalst{lst:python}{Política de degradação no estilo imperativo da versão
+anterior do AgroView-SC (reconstrução ilustrativa).}
+\end{blocolst}
+
+Essa formulação apresenta seis deficiências que \textbf{não são defeitos de
+implementação, mas consequências de se empregar uma linguagem de propósito
+geral} em um domínio com requisitos de verificação.
+
+\textbf{(i) Ausência de verificação de invariantes de segurança.} Nada impede
+que uma política escreva \texttt{v["FPV"].enabled = False}, desativando a
+superfície de criticidade mais alta. A construção é válida em Python e o erro
+só se manifesta em operação. Uma linguagem que conhece a criticidade das
+superfícies pode \textbf{rejeitar essa construção em tempo de compilação}; é o
+padrão AVOPT de Mernik \textit{et al.}~\cite{mernik2005}.
+
+\textbf{(ii) Ausência de verificação dimensional.} As atribuições
+\texttt{target\_hz = 2.0} e \texttt{scale = 2.0} são indistinguíveis para o
+interpretador: ambas são \texttt{float}. O domínio, entretanto, distingue
+hertz, milissegundos, metros, metros por segundo e fração adimensional, e a
+segunda atribuição está fora do intervalo válido de escala. Com unidades
+incorporadas à sintaxe, a incompatibilidade é detectável estaticamente.
+
+\textbf{(iii) Ordem de avaliação relevante e não declarada.} Duas políticas
+simultaneamente ativas podem escrever o mesmo atributo com valores distintos; o
+resultado depende da ordem de registro no código-fonte, que não faz parte da
+especificação. Uma linguagem dedicada pode impor \textbf{composição
+monotônica} por atributo, com mínimo para atributos numéricos e conjunção para
+booleanos, operações comutativas e associativas e, portanto, independentes da
+ordem. Para atributos enumerados, sem ordem natural, a escrita é resolvida pela
+prioridade declarada e o conflito é registrado.
+
+\textbf{(iv) Não terminação e custo ilimitado.} A política é código
+Turing-completo executado dentro do laço de renderização. Um laço mal
+formulado, uma chamada custosa ou uma recursão inadvertida violam o orçamento.
+Na versão anterior, a chamada correspondente a \texttt{best\_landing\_site()}
+percorria uma matriz de $512 \times 512$ elementos a cada quadro em que a
+política estava ativa, sem limite declarado; esse custo não foi medido, pois o
+código foi descartado. Para um programa arbitrário em linguagem
+Turing-completa, decidir se a execução termina é indecidível e, \textit{a
+fortiori}, não há limite superior geral para seu custo~\cite{hopcroft2007}. Uma
+linguagem sem laços, sem recursão e com conjunto fechado de ações termina
+\textit{por construção}: a cada quadro, cada condição é avaliada uma vez,
+visitando cada nó de sua árvore, e cada efeito é composto uma vez, de modo que
+o trabalho do motor é limitado por um polinômio no tamanho do programa,
+conhecido após a compilação. O custo de executar cada ação fica com o
+hospedeiro e é declarado no seu modelo.
+
+\textbf{(v) Inauditabilidade.} A Listagem~\ref{lst:python} é de difícil leitura
+para o agrônomo e para o piloto. O gabarito Dado-Quando-Então aproxima a
+especificação do vocabulário do domínio; a revisão de~\cite{rodrigues2017}
+mostra, contudo, que esse ganho precisa ser medido com participantes, e não
+presumido pelos projetistas.
+
+\textbf{(vi) Espaço de configuração ilimitado.} Como uma função arbitrária pode
+produzir qualquer valor, o conjunto de configurações alcançáveis não é
+enumerável. Na DRESS-GL, o plano de cada quadro é função apenas do conjunto de
+regras ativas; um programa com $n$ regras alcança, portanto, no máximo $2^n$
+planos, cada um verificável por inspeção.
+
+Bibliotecas e padrões de projeto sobre a linguagem hospedeira atenuam (v), mas
+não afetam (i)--(iv), pois não é possível restringir o poder expressivo de uma
+linguagem de propósito geral sem deixar de usá-la. Arquivos JSON ou YAML validam
+estrutura, não significado, e não expressam condição, ponto de junção nem
+contrato. É a situação em que~\cite{vandeursen2000} e~\cite{mernik2005}
+recomendam uma linguagem dedicada. O principal risco apontado
+por~\cite{vandeursen2000}, o custo de projeto e manutenção da linguagem,
+justifica-se pela recorrência do artefato: as políticas são reescritas a cada
+nova aeronave, cultura, regulamentação e perfil de missão, por pessoas
+distintas das que implementaram o compositor.
+
+\subsection{Contribuições e organização}
+\label{sec:contrib}
+
+As contribuições deste trabalho são: (i) o projeto da DRESS-GL, cuja restrição
+deliberada de poder expressivo garante terminação e trabalho limitado por
+quadro; (ii) um processador completo, com analisadores escritos manualmente,
+verificação automática da propriedade LL(1), tabela de símbolos derivada do
+modelo do hospedeiro e oito verificações semânticas; (iii) um contrato de
+hospedeiro com duas implementações, uma de custo modelado e outra de custo
+medido, e uma ponte de telemetria com o CoppeliaSim baseada em gravações
+reproduzíveis; e (iv) uma avaliação experimental reprodutível de um cenário
+excepcional em sete condições. O código-fonte, os testes, o registro numerado
+de decisões de projeto (\texttt{docs/decisions.md}; ao longo do texto, D$n$
+indica a decisão $n$), as instruções de instalação (\texttt{README.md}) e o
+manual da linguagem (\texttt{docs/manual.md}) estão disponíveis no repositório
+\url{https://github.com/EmillyeRibeiro/dressgl}, na \textit{tag}
+\texttt{v3.0}.
+
+A Seção~\ref{sec:fundamentacao} apresenta a fundamentação teórica e os
+trabalhos relacionados; a Seção~\ref{sec:desenvolvimento}, os requisitos, a
+gramática, as ferramentas e a arquitetura do processador e dos hospedeiros; a
+Seção~\ref{sec:resultados-discussao}, os resultados de compilação, de teste e
+de execução; e a Seção~\ref{sec:conclusao}, as conclusões.
+
+%=======================================================================
+\section{Fundamentação Teórica}
+\label{sec:fundamentacao}
+
+\subsection{Linguagens específicas de domínio}
+\label{sec:dsl}
+
+Van Deursen, Klint e Visser~\cite{vandeursen2000} definem uma DSL como uma
+linguagem de programação ou de especificação executável que oferece, por meio
+de notações e abstrações apropriadas, poder expressivo focado em, e usualmente
+restrito a, um domínio de problema particular. DSLs são tipicamente
+declarativas e podem ser vistas simultaneamente como linguagens de
+especificação e de programação. Entre os benefícios estão expressividade,
+autodocumentação, validação e otimização no nível do domínio e envolvimento do
+especialista; entre os riscos, custo de projeto, implementação e manutenção,
+custo de treinamento, dificuldade de delimitar escopo e eventual perda de
+eficiência.
+
+Mernik, Heering e Sloane~\cite{mernik2005} organizam o desenvolvimento de DSLs
+em padrões de decisão, análise, projeto e implementação. Dois padrões de
+decisão aplicam-se aqui: \textbf{notação}, quando a notação do domínio é mal
+suportada por linguagens de propósito geral, e \textbf{AVOPT}
+(\textit{analysis, verification, optimization, parallelization,
+transformation}), quando análises específicas do domínio são desejáveis, mas
+difíceis ou impossíveis sobre uma linguagem Turing-completa. Quanto ao projeto,
+este trabalho segue o padrão de \textit{invenção de linguagem}: uma linguagem
+externa sem relação com uma linguagem hospedeira; quanto à implementação, o
+padrão \textit{interpretador}.
+
+Nascimento \textit{et al.}~\cite{nascimento2012} mapeiam domínios, ferramentas e
+processos de desenvolvimento de DSLs e discutem as \textbf{linguagens
+específicas de domínio orientadas a aspectos} (DSAL), que combinam DSLs com
+programação orientada a aspectos para modularizar interesses transversais. A
+cláusula \texttt{WHEN} da DRESS-GL, que declara pontos de junção
+(\texttt{BEFORE}, \texttt{AFTER}, \texttt{AROUND}) sobre passos de renderização,
+insere a linguagem nessa categoria: a política de degradação atravessa todos os
+passos e não pode ser modularizada no interior de nenhum deles.
+
+Rodrigues, Campos e Zorzo~\cite{rodrigues2017} constatam que a avaliação de
+usabilidade de DSLs é frequentemente omitida ou subjetiva. Como a legibilidade
+por especialistas é um objetivo da DRESS-GL, essa constatação é tratada como
+requisito: sustentar o objetivo exige um estudo com participantes, não
+realizado neste trabalho (Seção~\ref{sec:ameacas}).
+
+Boukham, Younsi Dahbi e Chiadmi~\cite{boukham2025} revisam DSLs para
+processamento de grafos e observam que a separação entre a abstração do domínio
+e as plataformas-alvo tende a ser resolvida por representação intermediária. Na
+DRESS-GL, o alvo é também um grafo, o de passos de renderização, e a separação
+é feita pela representação intermediária de condições e efeitos
+(Seção~\ref{sec:backend}); é essa separação que permite executar o mesmo
+programa compilado em dois hospedeiros distintos. Breuker~\cite{breuker2014}
+analisa DSLs para aprendizado de máquina sob a perspectiva da engenharia
+dirigida a modelos, evidenciando o valor de transformar especificações
+declarativas em artefatos executáveis, como faz o processador entre o arquivo
+\texttt{.dgl} e o motor.
+
+\subsection{Linguagens regulares e análise léxica}
+\label{sec:lexica}
+
+A estrutura lexical de uma linguagem de programação é tipicamente regular:
+cada classe de \textit{token} é descrita por uma expressão regular, e a união
+dessas expressões é reconhecida por um autômato finito determinístico
+(AFD)~\cite{hopcroft2007}. O analisador léxico simula o AFD sobre a entrada e,
+quando há mais de um prefixo aceito, aplica a regra do lexema mais longo
+(\textit{maximal munch}); palavras reservadas são reconhecidas como
+identificadores e reclassificadas por consulta a uma tabela, o que mantém o
+autômato pequeno~\cite{aho2007}.
+
+\subsection{Gramáticas livres de contexto e análise LL(1)}
+\label{sec:ll1}
+
+A estrutura sintática é descrita por uma gramática livre de contexto. Um
+analisador descendente recursivo associa uma função a cada não terminal e
+escolhe a produção a expandir pelo \textit{token} corrente. Isso dispensa
+retrocesso quando a gramática é LL(1): para cada não terminal $A$, os conjuntos
+das suas produções $A \to \alpha$, com $F = \mathrm{FIRST}(\alpha)$,
+\begin{equation*}
+\mathrm{SELECT}(A \to \alpha) =
+\begin{cases}
+F, & \varepsilon \notin F\\
+(F \setminus \{\varepsilon\}) \cup \mathrm{FOLLOW}(A), & \varepsilon \in F
+\end{cases}
+\end{equation*}
+devem ser disjuntos dois a dois~\cite{aho2007}. Recursão à esquerda e prefixos
+comuns violam essa condição e são removidos por eliminação de recursão e
+fatoração à esquerda. Para recuperação de erros, o modo pânico descarta
+\textit{tokens} até encontrar um elemento de um conjunto de sincronização,
+permitindo relatar vários erros em uma única execução~\cite{aho2007}.
+
+\subsection{Análise semântica e tabela de símbolos}
+\label{sec:semantica-teoria}
+
+Restrições que não são expressáveis por gramática livre de contexto, como a
+concordância entre uso e declaração de um nome, são deslocadas para a análise
+semântica, que percorre a árvore sintática abstrata (AST) consultando uma
+tabela de símbolos~\cite{aho2007}. Na DRESS-GL, essa fase concentra também as
+restrições do domínio: compatibilidade de unidades, pertinência a domínios de
+valores e invariantes de criticidade.
+
+\subsection{Trabalhos relacionados}
+\label{sec:relacionados}
+
+A DRESS-ML, de Alves \textit{et al.}~\cite{alves2022}, é uma DSL para modelagem
+de cenários excepcionais e comportamentos auto-adaptativos em aplicações
+baseadas em drones. Combina o gabarito Dado-Quando-Então, oriundo do
+desenvolvimento guiado por comportamento, com conceitos de programação
+orientada a aspectos; é implementada sobre o JetBrains MPS e gera, por
+transformação de modelo para texto, envoltórios executáveis para o simulador
+Dragonfly. A Stitch, de Cheng, Garlan e Schmerl~\cite{cheng2012}, representa
+estratégias de adaptação baseada em arquitetura no arcabouço Rainbow, com
+operadores, táticas e estratégias selecionadas por teoria da utilidade. A
+Tabela~\ref{tab:critica} relaciona essas e outras abordagens aplicáveis ao
+domínio e a limitação central de cada uma.
+
+\begin{table*}[t]
+\caption{Abordagens existentes e suas limitações para o domínio}
+\label{tab:critica}
+\centering
+\scriptsize
+\setlength{\tabcolsep}{3pt}
+\renewcommand{\arraystretch}{0.95}
+\begin{tabularx}{\textwidth}{@{}>{\raggedright\arraybackslash}p{0.17\textwidth}
+                               >{\raggedright\arraybackslash}p{0.19\textwidth}L@{}}
+\toprule
+\textbf{Abordagem} & \textbf{Natureza} & \textbf{Limitação central para o domínio} \\
+\midrule
+Funções e expressões lambda em linguagem de propósito geral (versão anterior do
+AgroView-SC) &
+Código Turing-completo embutido no laço de renderização &
+Sem verificação de invariantes de criticidade nem checagem dimensional;
+terminação não garantida e custo ilimitado; espaço de configuração não
+enumerável; de difícil auditoria pelo especialista \\
+\addlinespace
+Arquivos de configuração em JSON, YAML ou INI &
+Formato de dados sem semântica de domínio &
+Não expressam condição, ponto de junção nem contrato; a validação disponível é
+de conformidade a esquema estrutural, não de significado \\
+\addlinespace
+DRESS-ML~\cite{alves2022} &
+DSL de adaptação para drones; Dado-Quando-Então e aspectos, sobre JetBrains MPS &
+\textbf{Referência mais próxima.} Modela aeronave, missão, sensores e atuadores,
+mas não o subsistema de visualização; não possui atuadores gráficos nem noção
+de orçamento por quadro; validação relatada como prova de conceito em simulador
+único, e os autores registram a ausência de estudos empíricos de usabilidade \\
+\addlinespace
+Stitch~\cite{cheng2012} &
+DSL de táticas e estratégias de adaptação arquitetural, no arcabouço Rainbow &
+Granularidade de componente arquitetural e escala de tempo de segundos a
+minutos; inadequada a decisões por quadro em janela de 16,67\,ms; não modela
+recursos gráficos \\
+\addlinespace
+Linguagens de sombreamento (GLSL, HLSL) e grafos de material &
+Especificação de aparência visual &
+Especificam a aparência de cada fragmento, não a \textit{política} de alocação
+do orçamento entre superfícies de criticidade distinta \\
+\addlinespace
+Escalabilidade de motores gráficos: perfis de qualidade e escala dinâmica de
+resolução &
+Configuração e heurística embutidas no motor &
+Operam sobre um eixo único de fidelidade global e supõem critério perceptual
+homogêneo; desconhecem criticidade desigual e variável no tempo \\
+\addlinespace
+Linguagens de plano de missão e árvores de comportamento &
+Descrição de missão e de controle &
+Adaptam o comportamento da aeronave, não os recursos de visualização da
+estação de controle \\
+\addlinespace
+Linguagens de descrição de cenário para simulação &
+Definição declarativa de cenário &
+Descrevem os estímulos do ambiente, não a resposta adaptativa do sistema de
+exibição \\
+\addlinespace
+Definição declarativa de camadas em aviônica embarcada &
+Superfícies e prioridades definidas em tempo de projeto &
+Prioridades fixadas antes da execução; sem reconfiguração dependente do estado
+corrente da missão \\
+\bottomrule
+\end{tabularx}
+\end{table*}
+
+Nenhuma das abordagens reúne, simultaneamente: (a) notação declarativa voltada
+ao especialista; (b) pontos de junção sobre o grafo de passos de renderização;
+(c) verificação estática de invariantes de criticidade; (d) restrição sintática
+que garanta terminação; e (e) contrato temporal explícito. A DRESS-GL herda da
+DRESS-ML o gabarito Dado-Quando-Então e a organização orientada a aspectos, e
+dela se distingue em três pontos: adapta o subsistema de visualização da
+estação, e não o comportamento da aeronave; submete as políticas a um
+orçamento temporal com contratos declarados em \texttt{ASSERT}; e é
+implementada como linguagem externa com analisadores próprios, e não sobre um
+ambiente de modelagem, o que expõe as fases de tradução e permite verificações
+específicas do domínio.
+
+%=======================================================================
+\section{Desenvolvimento}
+\label{sec:desenvolvimento}
+
+\subsection{Requisitos e escopo}
+\label{sec:requisitos}
+
+\textbf{Objetivo geral.} Projetar e implementar a DRESS-GL e um processador que
+realize as análises léxica, sintática e semântica, compile as políticas
+validadas e as execute sobre hospedeiros que implementam o modelo e o contrato
+do compositor AgroView-SC, um deles com custo de quadro medido.
+
+\textbf{Funcionalidades da linguagem.}
+\begin{itemize}
+\item[\textbf{F1}] Declarar a política global (\texttt{POLICY}), com orçamento
+de quadro, reserva e período mínimo entre reconfigurações
+(\texttt{cooldown}).
+\item[\textbf{F2}] Declarar regras nomeadas e priorizadas segundo o gabarito
+\texttt{RULE $\dots$ GIVEN $\dots$ WHEN $\dots$ THEN $\dots$ [ASSERT] $\dots$
+END}.
+\item[\textbf{F3}] Expressar, em \texttt{GIVEN}, predicados sobre telemetria
+com operadores relacionais, conectivos \texttt{AND}, \texttt{OR} e
+\texttt{NOT}, pertinência a conjuntos enumerados e unidades de medida.
+\item[\textbf{F4}] Declarar, em \texttt{WHEN}, o ponto de junção no grafo de
+renderização, nas fases \texttt{BEFORE}, \texttt{AFTER} e \texttt{AROUND}.
+\item[\textbf{F5}] Expressar, em \texttt{THEN}, um conjunto \textbf{fechado} de
+ações: atribuição de atributos de superfície (\texttt{SET}), escalonamento de
+instâncias e de resolução (\texttt{SCALE}), injeção e supressão de passos
+(\texttt{INJECT}, \texttt{SUPPRESS}), destaque de extremos de campos escalares
+(\texttt{HIGHLIGHT}) e marcação de obsolescência (\texttt{MARK}).
+\item[\textbf{F6}] Declarar, em \texttt{ASSERT}, contratos sobre o efeito das
+ações, verificados estaticamente e em execução.
+\item[\textbf{F7}] \textbf{Não} oferecer laços, recursão, definição de funções
+nem aritmética: restrição deliberada que garante terminação
+(Seção~\ref{sec:relevancia}).
+\end{itemize}
+
+\textbf{Requisitos do processador.}
+\begin{itemize}
+\item[\textbf{P1}] Análise léxica por AFD, com literais numéricos anotados por
+unidade e registro de linha e coluna de cada \textit{token}.
+\item[\textbf{P2}] Análise sintática descendente recursiva sobre gramática
+LL(1), produzindo AST tipada, com recuperação de erros.
+\item[\textbf{P3}] Tabela de símbolos construída a partir do modelo do
+hospedeiro, com resolução de nomes por espaço de nomes.
+\item[\textbf{P4}] Oito verificações semânticas com diagnóstico posicionado:
+\textbf{V1} referência indefinida; \textbf{V2} incompatibilidade de unidade;
+\textbf{V3} valor fora do domínio admissível; \textbf{V4} violação de
+invariante de criticidade; \textbf{V5} ponto de junção inválido ou
+ambíguo; \textbf{V6} conflito de escrita entre regras de prioridade igual;
+\textbf{V7} regra logicamente inalcançável; \textbf{V8} asserção sem
+instrumento de medição.
+\item[\textbf{P5}] Compilação de cada regra validada em representação
+intermediária (RI) de condição e efeitos, de modo que o hospedeiro aplique um
+plano de ações sem executar código arbitrário.
+\item[\textbf{P6}] Execução por quadro, com composição monotônica entre regras
+ativas e período mínimo entre reconfigurações.
+\item[\textbf{P7}] Rastreabilidade entre regra, ações, alvos e asserções.
+\item[\textbf{P8}] Contrato de hospedeiro independente da implementação, com
+um hospedeiro de custo medido e entrada de telemetria por simulador físico,
+sem que o núcleo do processador dependa de bibliotecas externas.
+\end{itemize}
+
+A Tabela~\ref{tab:escopo} delimita o projeto, conforme a recomendação
+de~\cite{mernik2005} de fechar o escopo antes do projeto da linguagem. O
+domínio que motiva a linguagem compreende seis cenários excepcionais: bateria
+em reserva sobre superfície imprópria para pouso; perda de sinal de
+posicionamento com transição para guiagem manual; vento acima do limite de
+deriva de pulverização; degradação do sensor de obstáculos; tanque de calda
+esgotado; e a ocorrência simultânea desses eventos. O \textbf{escopo avaliado}
+é deliberadamente mais estreito (D57): \textbf{um único cenário}, o primeiro,
+examinado em \textbf{sete condições} de execução (Tabela~\ref{tab:condicoes},
+Seção~\ref{sec:avaliacao}). Os outros cinco exigem campos de telemetria que o
+modelo do hospedeiro ainda não declara e que a cena do simulador não fornece;
+ficam como trabalho futuro (Seção~\ref{sec:conclusao}).
+
+\begin{table}[htbp]
+\caption{Delimitação do escopo do projeto}
+\label{tab:escopo}
+\centering
+\footnotesize
+\begin{tabularx}{\columnwidth}{@{}LL@{}}
+\toprule
+\textbf{Dentro do escopo} & \textbf{Fora do escopo} \\
+\midrule
+Linguagem externa e textual, arquivos \texttt{.dgl} &
+Editor gráfico, ambiente projecional, sintaxe visual \\
+\addlinespace
+Analisadores léxico e sintático escritos manualmente &
+Geradores de analisador; inferência de tipos; polimorfismo \\
+\addlinespace
+Oito verificações semânticas (V1--V8) &
+Verificação formal por provador; \textit{model checking} \\
+\addlinespace
+\textit{Back end} interpretador sobre dois hospedeiros: simulado e AgroView-SC
+renderizado em CPU &
+Geração de código C/C++ certificável; compositor acelerado por GPU \\
+\addlinespace
+Atuadores gráficos: resolução, frequência, densidade de instâncias, modo de
+visualização, injeção e supressão de passo &
+Atuadores de rede, de armazenamento ou de controle de voo \\
+\addlinespace
+Telemetria de um único VANT, de cenário sintético ou gravada no CoppeliaSim &
+Enxames; telemetria de aeronave real; laço fechado com o simulador \\
+\addlinespace
+Um cenário excepcional em sete condições; quatro programas, com três regras
+distintas &
+Os outros cinco cenários; biblioteca completa de procedimentos de emergência \\
+\addlinespace
+Custo modelado e custo medido em CPU, com relógio por carga calibrado &
+Certificação aeronáutica; ensaio em voo; medição sobre GPU \\
+\addlinespace
+Reprodução de gravações sem interface gráfica &
+Janela de visualização (reservada ao extra \texttt{gui}) \\
+\bottomrule
+\end{tabularx}
+\end{table}
+
+\subsection{Gramática formal}
+\label{sec:gramatica}
+
+A Listagem~\ref{lst:ebnf} apresenta a gramática em EBNF. As definições
+regulares do topo descrevem as classes de \textit{tokens}; as demais
+produções, a sintaxe. A unidade de medida é parte do \textit{token}
+\texttt{NUM}, e não da gramática sintática: a linguagem léxica permanece
+regular, e cada literal numérico chega à análise semântica já anotado com sua
+unidade, o que viabiliza a verificação V2.
+
+\begin{blocolst}
+\begin{lstlisting}[basicstyle=\ttfamily\fontsize{6.5}{7.8}\selectfont]
+(* ---- lexico ---- *)
+letra      = "A".."Z" | "a".."z" | "_" ;
+digito     = "0".."9" ;
+(* palavra: reservada, BOOL, ENUM ou IDENT *)
+palavra    = letra { letra | digito } ;
+NUM        = digito { digito } [ "." digito { digito } ]
+             [ { " " | "\t" } UNIDADE ] ;
+UNIDADE    = "frames" | "m/s" | "ms" | "Hz" | "m" | "%" ;
+STRING     = '"' { caractere exceto '"' e quebra
+                   de linha } '"' ;
+comentario = "#" { caractere exceto quebra de linha } ;
+
+(* ---- sintaxe ---- *)
+programa   = { declaracao } ;
+declaracao = politica | regra ;
+politica   = "POLICY" IDENT "{" { atrib } "}" ;
+atrib      = param "=" literal ";" ;
+param      = "budget" | "reserve" | "cooldown" ;
+regra      = "RULE" IDENT [ "PRIORITY" NUM ]
+             "GIVEN" expr "WHEN" juncao "THEN" acoes
+             [ "ASSERT" expr ] "END" ;
+expr       = conj { "OR" conj } ;
+conj       = neg { "AND" neg } ;
+neg        = [ "NOT" ] atomo ;
+atomo      = "(" expr ")" | referencia resto ;
+resto      = op_rel literal | "IN" conjunto ;
+op_rel     = "<" | "<=" | ">" | ">=" | "==" | "!=" ;
+conjunto   = "{" ENUM { "," ENUM } "}" ;
+referencia = IDENT [ "." IDENT ] | alvo "." IDENT ;
+alvo       = "view" STRING | "pass" STRING ;
+juncao     = fase "pass" STRING ;
+fase       = "BEFORE" | "AFTER" | "AROUND" ;
+acoes      = acao ";" { acao ";" } ;
+acao       = "SET"       alvo "." IDENT "=" literal
+           | "SCALE"     recurso STRING "BY" NUM
+           | "INJECT"    "pass" STRING fase_rel STRING
+           | "SUPPRESS"  "pass" STRING
+           | "HIGHLIGHT" extremo referencia
+                         [ "WITHIN" literal ]
+           | "MARK"      alvo "STALE" ;
+recurso    = "instances" | "resolution" ;
+fase_rel   = "BEFORE" | "AFTER" ;
+extremo    = "ARGMAX" | "ARGMIN" ;
+literal    = NUM | ENUM | BOOL | STRING ;
+\end{lstlisting}
+\legendalst{lst:ebnf}{Gramática da DRESS-GL em EBNF: definições regulares dos
+\textit{tokens} (topo) e produções sintáticas.}
+\end{blocolst}
+
+Uma palavra é classificada, nesta ordem, como palavra reservada (33 no total),
+booleano (\texttt{true}, \texttt{false}), enumerado, se começa por maiúscula e
+contém apenas maiúsculas, dígitos e sublinhado (\texttt{WATER},
+\texttt{STANDING\_CROP}), ou identificador. Por consequência, nomes de regra e
+de política são escritos em PascalCase (\texttt{SafeSetdownAssist}); um nome
+como \texttt{GPS\_LOSS} seria lido como enumerado. A exigência de que
+\texttt{PRIORITY} receba um inteiro sem unidade é verificada pelo analisador
+sintático, que registra o erro sem abandonar a regra.
+
+Para a verificação, as construções EBNF foram reescritas em BNF (repetições e
+opcionais viram não terminais com alternativa vazia), resultando em 33 não
+terminais e 52 terminais (palavras reservadas, sete operadores, sete sinais de
+pontuação e as classes \texttt{IDENT}, \texttt{NUM}, \texttt{STRING},
+\texttt{ENUM} e \texttt{BOOL}). O módulo \texttt{gramatica\_ll1} calcula FIRST e
+FOLLOW por ponto fixo, deriva os conjuntos SELECT e verifica que eles são
+disjuntos para todo não terminal; um teste automatizado falha se surgir
+conflito LL(1) ou não terminal inalcançável, e outro confirma que os terminais
+da gramática coincidem com os \textit{tokens} do analisador léxico. A
+Tabela~\ref{tab:select} mostra os casos decisivos: os não terminais anuláveis,
+em que a escolha depende de FOLLOW, e os que têm alternativas não vazias. Em
+\texttt{atomo}, a fatoração à esquerda em \texttt{resto} elimina o prefixo
+comum \texttt{referencia}; em \texttt{campo}, o ponto não pertence a
+FOLLOW(\texttt{referencia}), o que permite referências simples, como
+\texttt{frame\_budget}, sem perder a propriedade LL(1). Os demais não terminais
+com alternativas (\texttt{declaracao}, \texttt{param}, \texttt{op\_rel},
+\texttt{alvo}, \texttt{fase}, \texttt{acao}, \texttt{recurso},
+\texttt{fase\_rel}, \texttt{extremo}, \texttt{literal}) começam cada
+alternativa por um terminal distinto.
+
+\begin{table}[htbp]
+\caption{Conjuntos SELECT dos não terminais anuláveis e dos que exigem
+fatoração}
+\label{tab:select}
+\centering
+\scriptsize
+\setlength{\tabcolsep}{3pt}
+\begin{tabularx}{\columnwidth}{@{}l >{\raggedright\arraybackslash}p{0.30\columnwidth} L@{}}
+\toprule
+\textbf{Não terminal} & \textbf{Alternativa} & \textbf{SELECT} \\
+\midrule
+\texttt{decls}      & \texttt{declaracao decls} & \texttt{POLICY}, \texttt{RULE} \\
+                    & $\varepsilon$ & \texttt{\$} \\
+\texttt{atribs}     & \texttt{atrib atribs} & \texttt{budget}, \texttt{reserve}, \texttt{cooldown} \\
+                    & $\varepsilon$ & \texttt{\}} \\
+\texttt{prio}       & \texttt{PRIORITY NUM} & \texttt{PRIORITY} \\
+                    & $\varepsilon$ & \texttt{GIVEN} \\
+\texttt{assert\_opt}& \texttt{ASSERT expr} & \texttt{ASSERT} \\
+                    & $\varepsilon$ & \texttt{END} \\
+\texttt{expr\_r}    & \texttt{OR conj expr\_r} & \texttt{OR} \\
+                    & $\varepsilon$ & \texttt{WHEN}, \texttt{END}, \texttt{)} \\
+\texttt{conj\_r}    & \texttt{AND neg conj\_r} & \texttt{AND} \\
+                    & $\varepsilon$ & \texttt{OR}, \texttt{WHEN}, \texttt{END}, \texttt{)} \\
+\texttt{campo}      & \texttt{. IDENT} & \texttt{.} \\
+                    & $\varepsilon$ & \texttt{< <= > >= == !=}, \texttt{IN}, \texttt{WITHIN}, \texttt{;} \\
+\texttt{enums}      & \texttt{, ENUM enums} & \texttt{,} \\
+                    & $\varepsilon$ & \texttt{\}} \\
+\texttt{acoes\_r}   & \texttt{acao ; acoes\_r} & \texttt{SET}, \texttt{SCALE}, \texttt{INJECT}, \texttt{SUPPRESS}, \texttt{HIGHLIGHT}, \texttt{MARK} \\
+                    & $\varepsilon$ & \texttt{ASSERT}, \texttt{END} \\
+\texttt{within}     & \texttt{WITHIN literal} & \texttt{WITHIN} \\
+                    & $\varepsilon$ & \texttt{;} \\
+\addlinespace
+\texttt{neg}        & \texttt{NOT atomo} & \texttt{NOT} \\
+                    & \texttt{atomo} & \texttt{(}, \texttt{IDENT}, \texttt{view}, \texttt{pass} \\
+\texttt{atomo}      & \texttt{( expr )} & \texttt{(} \\
+                    & \texttt{referencia resto} & \texttt{IDENT}, \texttt{view}, \texttt{pass} \\
+\texttt{referencia} & \texttt{IDENT campo} & \texttt{IDENT} \\
+                    & \texttt{alvo . IDENT} & \texttt{view}, \texttt{pass} \\
+\texttt{resto}      & \texttt{op\_rel literal} & \texttt{< <= > >= == !=} \\
+                    & \texttt{IN conjunto} & \texttt{IN} \\
+\bottomrule
+\end{tabularx}
+\end{table}
+
+A Listagem~\ref{lst:exemplo} exibe um programa completo, correspondente ao
+cenário de bateria em reserva sobre superfície imprópria para pouso. Em relação
+à Listagem~\ref{lst:python}, ele declara explicitamente a condição, o ponto de
+junção, as ações e o contrato a preservar.
+
+\begin{blocolst}
+\begin{lstlisting}[style=dsl]
+POLICY AgroViewSC {
+  budget   = 16.67 ms;
+  reserve  =  2.00 ms;
+  cooldown =    10 frames;
+}
+
+RULE SafeSetdownAssist PRIORITY 90
+  GIVEN drone.battery < 18 %
+    AND terrain.below IN { WATER, STANDING_CROP }
+  WHEN  AROUND pass "TerrainPass"
+  THEN  INJECT pass "SuitabilityPass" AFTER "TerrainPass";
+        SET view "MAP".mode = SUITABILITY;
+        HIGHLIGHT ARGMAX terrain.suitability WITHIN 400 m;
+        SET view "AGRO".hz = 2 Hz;
+        SCALE instances "crops" BY 0.25;
+  ASSERT frame_budget <= 16.67 ms
+     AND view "FPV".scale >= 0.75
+END
+\end{lstlisting}
+\legendalst{lst:exemplo}{Política de assistência a pouso seguro em DRESS-GL
+(\texttt{examples/\allowbreak safe\_setdown.dgl}).}
+\end{blocolst}
+
+\subsection{Ferramentas e estratégia de implementação}
+\label{sec:ferramentas}
+
+O processador foi implementado em Python~3.11. O núcleo (pacote
+\texttt{dressgl}: compilador, motor, contrato e hospedeiro simulado) usa apenas
+a biblioteca padrão: \texttt{tomllib} para o modelo do hospedeiro e os
+cenários, \texttt{dataclasses} imutáveis para \textit{tokens}, AST e RI, e
+\texttt{argparse} para as interfaces de linha de comando. Nenhum gerador de
+analisador (PLY, ANTLR, Flex/Bison) foi empregado: a implementação manual expõe
+a simulação do AFD, a correspondência entre funções e não terminais, a
+recuperação de erros e a integração entre a tabela de símbolos e as
+verificações do domínio, aspectos que um gerador encapsula. As demais
+dependências são opcionais e declaradas como extras do
+\texttt{pyproject.toml}: NumPy para a renderização do AgroView-SC
+(\texttt{render}), o cliente da API remota ZeroMQ do CoppeliaSim
+(\texttt{coppelia}) e \texttt{pytest}~9.1.1 com NumPy para os testes
+(\texttt{dev}, D59). Um teste executa o núcleo em subprocesso sem NumPy
+disponível e confirma que ele não o importa. As versões exatas estão em
+\texttt{results/requirements-lock.txt}, e o ambiente de execução (Windows~11,
+compilação 26200, processador Intel Core i7-13620H com 16 \textit{threads}), em
+\texttt{results/ambiente.json}.
+
+Quanto à estratégia, a DRESS-GL é \textbf{compilada para uma RI e
+interpretada}: cada regra validada é traduzida em uma condição, avaliada por
+caminhamento da AST da expressão, e em uma tupla imutável de efeitos, que o
+motor compõe a cada quadro em um plano de ações. Não há geração de código-alvo.
+As decisões de projeto estão registradas, numeradas, em
+\texttt{docs/decisions.md}, e o manual do usuário, em \texttt{docs/manual.md}.
+
+\subsection{Arquitetura do processador e dos hospedeiros}
+\label{sec:arquitetura}
+
+A Fig.~\ref{fig:arquitetura} mostra o fluxo de dados. A interrupção entre fases
+é deliberada: erros léxicos ou sintáticos impedem a análise semântica, para
+evitar diagnósticos em cascata sobre uma AST parcial, e erros semânticos
+impedem a geração da RI; avisos não bloqueiam. Dentro de cada fase, porém,
+nenhum erro interrompe a análise: todos são relatados de uma vez.
+
+\begin{figure*}[t]
+\centering
+\begin{adjustbox}{max width=\textwidth}
+\begin{tikzpicture}[node distance=5mm, >={Stealth[length=1.6mm]},
+  b/.style={draw, rounded corners=2pt, align=center, font=\scriptsize,
+            minimum height=9mm, inner sep=3pt},
+  l/.style={font=\tiny}]
+\node[b] (src) {Fonte\\\texttt{.dgl}};
+\node[b, right=of src] (lex) {Léxico\\(AFD)};
+\node[b, right=of lex] (sin) {Sintático\\(desc.\ recursivo)};
+\node[b, right=of sin] (sem) {Semântico\\(V1--V8, C1, C2)};
+\node[b, right=of sem] (ger) {Gerador\\de RI};
+\node[b, right=of ger] (mot) {Motor\\(\texttt{cooldown}, composição,\\\texttt{ASSERT})};
+\node[b, below=10mm of sem] (mod) {Modelo do hospedeiro\\\texttt{agroview.toml}};
+\node[b, below=10mm of mot] (con) {Contrato do hospedeiro\\(\texttt{hospedeiro.py}, D40)};
+\node[b, right=6mm of con] (tr) {\textit{Trace} JSONL\\e métricas};
+\node[b, below=10mm of con, xshift=-23mm] (sim) {Hospedeiro simulado\\(custo modelado,\\Eq.~(\ref{eq:custo}))};
+\node[b, below=10mm of con, xshift=23mm] (agv) {AgroView-SC\\(render em CPU,\\relógio \texttt{tempo}/\texttt{carga})};
+\node[b, below=27mm of con] (cop) {CoppeliaSim 4.10\\(ponte ZeroMQ,\\gravações JSONL)};
+\draw[->] (src) -- (lex);
+\draw[->] (lex) -- node[above, l] {tokens} (sin);
+\draw[->] (sin) -- node[above, l] {AST} (sem);
+\draw[->] (sem) -- node[above, l] {AST} (ger);
+\draw[->] (ger) -- node[above, l] {RI} (mot);
+\draw[->] (mod) -- node[left, l] {símbolos} (sem);
+\draw[->] (mod) -- node[above, l] {custos, padrões} (con);
+\draw[->] ([xshift=-5mm]mot.south) -- node[left, l] {plano $q$} ([xshift=-5mm]con.north);
+\draw[->] ([xshift=5mm]con.north) -- node[right, l] {leituras $q{+}1$} ([xshift=5mm]mot.south);
+\draw[->] (mot.east) -| (tr.north);
+\draw[<->] (con) -- (sim);
+\draw[<->] (con) -- (agv);
+\draw[->, dashed] (cop) -- node[sloped, below, l] {entradas} (sim);
+\draw[->, dashed] (cop) -- node[sloped, below, l] {entradas} (agv);
+\end{tikzpicture}
+\end{adjustbox}
+\caption{Arquitetura do processador DRESS-GL, dos dois hospedeiros e do laço
+de execução por quadro. As linhas tracejadas indicam telemetria gravada no
+CoppeliaSim e reproduzida pelos hospedeiros.}
+\label{fig:arquitetura}
+\end{figure*}
+
+\subsubsection{Analisador léxico}
+\label{sec:lexer}
+O módulo \texttt{lexer} simula diretamente o AFD da Fig.~\ref{fig:afd}: o
+primeiro caractere escolhe o ramo, e um laço consome o maior lexema aceito.
+Depois de reconhecer um número, o analisador examina, sem consumir, se após
+espaços ou tabulações segue uma unidade não continuada por letra ou dígito;
+apenas nesse caso a unidade é anexada ao \textit{token}. Assim,
+\texttt{10 frames} produz um único \texttt{NUM} com unidade \texttt{frames},
+enquanto \texttt{10 mode} produz \texttt{NUM} seguido de \texttt{IDENT}. As
+unidades são testadas da mais longa para a mais curta (\texttt{m/s} e
+\texttt{ms} antes de \texttt{m}). Um caractere sem transição ou uma cadeia não
+terminada geram um \textit{token} \texttt{ERRO} com linha e coluna, e a
+varredura continua. Identificadores aceitam apenas letras ASCII, limitação
+documentada e coberta por teste.
+
+\begin{figure}[htbp]
+\centering
+\begin{adjustbox}{max width=\columnwidth}
+\begin{tikzpicture}[>={Stealth[length=1.5mm]}, shorten >=1pt,
+  every state/.style={draw, circle, minimum size=7mm, inner sep=0pt,
+                      font=\scriptsize},
+  font=\tiny]
+\node[state, initial, initial text={}] (q0) at (0,0)      {$q_0$};
+\node[state, accepting] (nid)  at (2.2,3.4)  {ID};
+\node[state, accepting] (nint) at (2.2,2.0)  {INT};
+\node[state]            (npt)  at (3.6,2.0)  {$q_p$};
+\node[state, accepting] (nfr)  at (5.0,2.0)  {FRA};
+\node[state]            (ns)   at (2.2,0.4)  {$q_s$};
+\node[state, accepting] (nsf)  at (3.6,0.4)  {STR};
+\node[state, accepting] (no1)  at (2.2,-1.0) {OP};
+\node[state, accepting] (no2)  at (3.6,-1.6) {OP2};
+\node[state]            (nex)  at (2.2,-2.2) {$q_!$};
+\node[state, accepting] (npu)  at (0,-2.2)   {PT};
+\path[->]
+ (q0)   edge node[sloped, above] {letra} (nid)
+ (nid)  edge[loop right] node[right] {letra, dígito} ()
+ (q0)   edge node[sloped, above, pos=0.6] {dígito} (nint)
+ (nint) edge[loop above] node[above] {dígito} ()
+ (nint) edge node[above] {.} (npt)
+ (npt)  edge node[above] {dígito} (nfr)
+ (nfr)  edge[loop above] node[above] {dígito} ()
+ (q0)   edge node[sloped, above, pos=0.55] {aspas} (ns)
+ (ns)   edge[loop above] node[above] {outro} ()
+ (ns)   edge node[above] {aspas} (nsf)
+ (q0)   edge node[sloped, above, pos=0.6] {< > =} (no1)
+ (no1)  edge node[sloped, above] {=} (no2)
+ (q0)   edge node[sloped, below, pos=0.6] {!} (nex)
+ (nex)  edge node[sloped, below] {=} (no2)
+ (q0)   edge node[left] {; , . \{ \} ( )} (npu);
+\end{tikzpicture}
+\end{adjustbox}
+\caption{AFD do analisador léxico (espaços e comentários \texttt{\#} omitidos).
+Em ID, o lexema é reclassificado como palavra reservada, booleano, enumerado ou
+identificador; em INT e FRA, uma unidade opcional é anexada ao \textit{token}
+\texttt{NUM}. Caracteres sem transição a partir de $q_0$, ou uma quebra de
+linha em $q_s$, geram \textit{token} \texttt{ERRO}.}
+\label{fig:afd}
+\end{figure}
+
+\subsubsection{Analisador sintático}
+\label{sec:parser}
+O módulo \texttt{parser} tem uma função por não terminal da
+Listagem~\ref{lst:ebnf}; cada escolha de produção consulta apenas o
+\textit{token} corrente, segundo os conjuntos da Tabela~\ref{tab:select}. As
+repetições EBNF tornam-se laços, e a precedência
+\texttt{NOT}~$>$~\texttt{AND}~$>$~\texttt{OR}, com associação à esquerda, é
+dada pela própria estratificação \texttt{expr}/\texttt{conj}/\texttt{neg}. O
+resultado é uma AST de nós imutáveis e tipados (\texttt{Regra},
+\texttt{Comparacao}, \texttt{AcaoSet} etc.), cada um com sua posição no fonte.
+Na recuperação em modo pânico, um erro descarta a declaração corrente e a
+análise recomeça no próximo \texttt{POLICY}, \texttt{RULE} ou fim de arquivo,
+isto é, em FIRST(\texttt{declaracao})~$\cup$~\{\texttt{\$}\}. Um
+\texttt{END} ausente produz, por isso, um único erro, e a regra seguinte é
+analisada normalmente.
+
+\subsubsection{Tabela de símbolos e regras de escopo}
+\label{sec:tabsimb}
+O módulo \texttt{modelo} constrói a tabela de símbolos a partir de
+\texttt{agroview.toml}. Cada entrada associa um nome a um domínio tipado:
+booleano, enumerado, numérico (com unidade, lista de valores admissíveis e
+limites mínimo e máximo) ou campo escalar; superfícies têm ainda uma
+criticidade (\texttt{CRITICA}, \texttt{ALTA}, \texttt{MEDIA} ou
+\texttt{BAIXA}), e campos de telemetria podem declarar um instrumento de
+medição. O modelo é validado ao ser carregado: um atributo que a linguagem não
+conseguiria escrever, por ser palavra reservada ou estar em caixa alta, é
+rejeitado ali, e não quando uma regra tentar usá-lo. Como a DRESS-GL não
+permite declarar variáveis, todos os nomes resolvem-se em um escopo global
+fornecido pelo modelo, e o contexto sintático seleciona o espaço de nomes:
+\texttt{view "X"} consulta as superfícies, \texttt{pass "X"} os passos,
+\texttt{instances "X"} as instâncias, e uma referência sem qualificador, como
+\texttt{drone.battery}, a telemetria. Nomes de regra e de política formam um
+espaço de nomes próprio do programa, no qual duplicatas são rejeitadas.
+
+\subsubsection{Verificações semânticas}
+\label{sec:verif}
+O módulo \texttt{semantica} percorre a AST e aplica as verificações da
+Tabela~\ref{tab:verificacoes}. V2 e V3 desempenham o papel de verificação de
+tipos: o tipo de cada referência é o seu domínio, e o literal comparado ou
+atribuído precisa ser compatível em classe, unidade e valor. Unidades não são
+convertidas: o literal deve usar exatamente a unidade do modelo, o que evita
+erros de escala entre, por exemplo, milissegundos e segundos.
+
+V6 e V7 dependem de satisfatibilidade. Como cada átomo compara uma única
+variável a uma constante, o valor-verdade de um átomo só muda nas constantes
+da expressão; basta testar um representante por região do domínio: o domínio
+inteiro, para booleanos e enumerados; a lista de valores admissíveis, quando
+existe; e, para numéricos contínuos, as constantes, os pontos médios entre
+constantes consecutivas, um ponto além de cada extremo e os limites do modelo.
+Avaliar a expressão em todas as combinações decide a satisfatibilidade de forma
+exata. O custo cresce exponencialmente com o número de variáveis distintas,
+pequeno em uma regra; acima de $10^5$ combinações, a verificação emite aviso em
+vez de decidir. V6 considera apenas atributos enumerados, pois numéricos e
+booleanos têm composição monotônica (Seção~\ref{sec:backend}).
+
+\begin{table*}[t]
+\caption{Verificações semânticas e casos cobertos pelos testes de semântica}
+\label{tab:verificacoes}
+\centering
+\scriptsize
+\setlength{\tabcolsep}{3pt}
+\begin{tabularx}{\textwidth}{@{}l L >{\raggedright\arraybackslash}p{0.31\textwidth} c c@{}}
+\toprule
+\textbf{Cód.} & \textbf{Condição de rejeição} & \textbf{Exemplo rejeitado} &
+\textbf{Rejeita} & \textbf{Aceita} \\
+\midrule
+V1 & telemetria, superfície, atributo, passo ou instância inexistente no modelo;
+\texttt{SET} sobre passo & \texttt{GIVEN drone.altitude < 10 m} & 5 & -- \\
+\addlinespace
+V2 & unidade do literal diferente da do modelo; fator de \texttt{SCALE} com
+unidade & \texttt{SET view "AGRO".hz = 2;} & 6 & -- \\
+\addlinespace
+V3 & valor fora dos limites, da lista admissível ou do enumerado; operador de
+ordem sobre enumerado; campo escalar fora de \texttt{HIGHLIGHT}; fator fora de
+$(0,1]$; \texttt{reserve} $\geq$ \texttt{budget} &
+\texttt{SCALE instances "crops" BY 1.5;} & 11 & -- \\
+\addlinespace
+V4 & desativação de superfície \texttt{CRITICA} &
+\texttt{SET view "FPV".enabled = false;} & 1 & 2 \\
+\addlinespace
+V5 & junção sobre passo injetado pela própria regra; \texttt{AROUND} ou
+\texttt{AFTER} sobre passo suprimido; \texttt{INJECT} relativo a si mesmo ou a
+passo suprimido; dois \texttt{INJECT} na mesma âncora e fase &
+\texttt{WHEN AROUND pass "TerrainPass"} com \texttt{SUPPRESS pass "TerrainPass"}
+& 6 & 1 \\
+\addlinespace
+V6 & regras de mesma prioridade, simultaneamente satisfazíveis, que atribuem
+valores distintos a um atributo enumerado; dois valores na mesma regra &
+duas regras escrevendo \texttt{view "MAP".mode} & 2 & 3 \\
+\addlinespace
+V7 & \texttt{GIVEN} insatisfazível no domínio do modelo &
+\texttt{drone.battery < 10 \% AND} \texttt{drone.battery > 20 \%} & 4 & 3 \\
+\addlinespace
+V8 & \texttt{ASSERT} sobre telemetria sem instrumento declarado &
+\texttt{ASSERT drone.battery > 5 \%} & 2 & -- \\
+\midrule
+C1 & \texttt{SET} que contradiz o \texttt{ASSERT} da própria regra &
+\texttt{SET view "FPV".scale = 0.5} com \texttt{ASSERT view "FPV".scale >= 0.75}
+& 1 & 1 \\
+\addlinespace
+C2 & mais de uma \texttt{POLICY}; parâmetro repetido; \texttt{POLICY} sem
+\texttt{budget}; regra duplicada &
+\texttt{POLICY Politica \{ cooldown = 10 frames; \}} & 4 & -- \\
+\bottomrule
+\end{tabularx}
+\end{table*}
+
+As verificações C1 e C2 complementam a numeração V1--V8 definida nos
+requisitos.
+
+\subsubsection{Representação intermediária e motor de execução}
+\label{sec:backend}
+O módulo \texttt{interpretador} só gera a RI para programas sem erros. Cada
+regra torna-se uma \texttt{RegraExecutavel} com nome, prioridade, junção,
+condição, contrato opcional e uma tupla de efeitos imutáveis
+(\texttt{EfeitoSet}, \texttt{EfeitoScale}, \texttt{EfeitoInject},
+\texttt{EfeitoSuppress}, \texttt{EfeitoHighlight}, \texttt{EfeitoMark}), cada
+um com a linha de origem para rastreabilidade. A condição associa cada átomo ao
+nome da leitura que o hospedeiro deve fornecer (\texttt{drone.battery},
+\texttt{frame\_budget}, \texttt{view:FPV.scale}); uma leitura ausente gera erro
+de execução sem alterar o estado do motor.
+
+O módulo \texttt{motor} executa um passo por quadro: avalia os
+\texttt{ASSERT}s das regras aplicadas no quadro anterior; avalia cada
+\texttt{GIVEN}; ativa ou desativa regras, respeitando o \texttt{cooldown}
+(uma regra que mudou de estado só pode mudar de novo após \texttt{cooldown}
+quadros, e a mudança pedida antes disso é registrada como retida); e compõe os
+efeitos das regras ativas em um plano, segundo a Tabela~\ref{tab:composicao}.
+As regras são percorridas por prioridade decrescente, as sem prioridade por
+último e os empates pela linha no fonte; como essa ordenação é feita pelo
+próprio motor, o plano não depende da ordem de ativação, e compor uma regra
+consigo mesma é idempotente.
+
+\begin{table}[htbp]
+\caption{Composição de efeitos entre regras ativas}
+\label{tab:composicao}
+\centering
+\footnotesize
+\begin{tabularx}{\columnwidth}{@{}>{\raggedright\arraybackslash}p{0.36\columnwidth} L@{}}
+\toprule
+\textbf{Efeito sobre o mesmo alvo} & \textbf{Regra de composição} \\
+\midrule
+\texttt{SET} numérico & mínimo \\
+\texttt{SET} booleano & conjunção \\
+\texttt{SET} enumerado & vence a primeira na ordem; conflito registrado \\
+\texttt{SCALE} & menor fator \\
+\texttt{INJECT}/\texttt{SUPPRESS} do mesmo passo & vence a primeira na ordem;
+conflito registrado \\
+\texttt{HIGHLIGHT}, \texttt{MARK} & união sem repetição \\
+\bottomrule
+\end{tabularx}
+\end{table}
+
+O motor não conhece o hospedeiro: recebe um dicionário de leituras e devolve um
+registro imutável com regras ativas, ativadas, desativadas e retidas,
+conflitos, violações de contrato e plano. O \texttt{ASSERT} de uma regra
+aplicada no quadro $q$ é verificado com as leituras do quadro $q+1$, que medem
+o efeito do plano de $q$; uma violação é registrada e não desfaz a regra.
+
+\subsubsection{Contrato do hospedeiro}
+\label{sec:contrato}
+O motor conversa com qualquer hospedeiro apenas pelo contrato do módulo
+\texttt{hospedeiro} (D40): no quadro $q$, o hospedeiro recebe o plano calculado
+no quadro $q-1$, aplica-o, desenha e devolve as leituras de $q$, entre elas
+\texttt{frame\_budget} e a configuração em vigor de cada vista. Como o motor,
+o \textit{trace} e as métricas dependem só desse contrato, o mesmo programa
+compilado, sem nenhuma alteração, é executado nos dois hospedeiros descritos a
+seguir, o que permite comparar diretamente os resultados (Q4,
+Seção~\ref{sec:avaliacao}).
+
+\subsubsection{Hospedeiro simulado}
+\label{sec:hospedeiro}
+O módulo \texttt{simulador} é o hospedeiro de custo modelado. Cada cenário é um
+arquivo TOML que descreve as entradas de telemetria quadro a quadro, em trechos
+constantes ou em rampas lineares, com ruído gaussiano opcional de semente fixa;
+o mesmo cenário produz sempre o mesmo \textit{trace}. A cada quadro, o
+hospedeiro aplica o plano recebido e produz as leituras do quadro seguinte: a
+configuração em vigor de cada atributo é o valor do plano ou, na sua ausência,
+o padrão de maior qualidade (maior valor admissível, primeiro enumerado ou
+\texttt{true}), e o custo do quadro é \emph{modelado}, não medido:
+\begin{equation}
+c = c_0 + \sum_{p \in P} c_p\, f_p
+        + \sum_{s \in S} c_s\, e_s^{2}\, \frac{h_s}{h_s^{0}},
+\label{eq:custo}
+\end{equation}
+em que $P$ é o conjunto de passos executados (padrão, menos os suprimidos, mais
+os injetados), $f_p$ é a fração de instâncias desenhadas pelo passo $p$, $S$ é
+o conjunto de superfícies habilitadas, $e_s$ é a escala linear de resolução da
+superfície $s$, e $h_s$ e $h_s^{0}$ são sua frequência corrente e padrão. Os
+parâmetros, calibrados manualmente, estão na seção \texttt{[custo]} de
+\texttt{agroview.toml}: $c_0 = 2$\,ms; passos \texttt{TerrainPass} e
+\texttt{SuitabilityPass} com 3\,ms e \texttt{CropInstancesPass} com 4\,ms;
+superfícies \texttt{FPV}, \texttt{MAP} e \texttt{AGRO} com 3, 1 e 2\,ms. Modo de
+visualização, destaques e marcas não entram na Eq.~(\ref{eq:custo}), e o
+hospedeiro simulado não modela a ordem dos passos no grafo.
+
+\subsubsection{Hospedeiro medido AgroView-SC}
+\label{sec:agroview}
+O pacote \texttt{agroview} implementa o mesmo contrato com renderização real,
+em CPU, com NumPy (D42), e não sobre GPU. São três superfícies: \texttt{FPV}
+($320 \times 180$), \texttt{MAP} ($128 \times 128$) e \texttt{AGRO}
+($96 \times 96$), nas resoluções de \texttt{scale}~=~1,0, com 200 instâncias
+base de cultura. Cada superfície é desenhada na sua própria frequência, por
+decimação em relação aos 60\,Hz do quadro (D43): uma superfície a 2\,Hz é
+redesenhada a cada 30 quadros. O \texttt{frame\_budget} é o custo do próprio
+quadro, sem média móvel (D46), para que o \texttt{ASSERT} verificado em $q+1$
+meça o efeito do plano de $q$, e não de uma janela de quadros.
+
+O relógio tem dois modos (D48). No modo \texttt{tempo}, \texttt{frame\_budget}
+é o tempo de parede do quadro, medido com \texttt{perf\_counter}. No modo
+\texttt{carga}, $\mathtt{frame\_budget} = \sum_p \ell_p\, k_p$, em que a carga
+$\ell_p$ é uma contagem estrutural do passo $p$ (pixels $\times$ operações por
+pixel) e $k_p$ é um coeficiente por unidade de carga (em ns na Tabela~\ref{tab:calibracao}), obtido por
+calibração. O modo \texttt{carga} é determinístico, o que permite fixar as
+métricas por teste de regressão, e próximo do tempo medido na máquina
+calibrada. A calibração (\texttt{tools/calibrar\_relogio.py}) mede 540 quadros,
+depois de 60 de aquecimento, e grava em \texttt{results/calibracao.toml} a mediana de cada passo
+(Tabela~\ref{tab:calibracao}). Com esses coeficientes e nenhuma regra ativa, o
+quadro comum, com \texttt{TerrainPass} em \texttt{FPV} e \texttt{MAP} e as 200
+instâncias de cultura, vale cerca de 3,9\,ms, e o quadro em que \texttt{AGRO}
+também é redesenhado (a cada 6 quadros, a 10\,Hz), cerca de 5,1\,ms. Com a
+regra ativa, o \texttt{SuitabilityPass} injetado é sobreposto a \texttt{FPV}
+(D47) e a \texttt{MAP}, no modo \texttt{SUITABILITY} (D45); essas duas
+sobreposições somam cerca de 9,3\,ms, e o pior quadro nas gravações chega a
+14,22\,ms (Tabela~\ref{tab:coppelia}).
+
+\begin{table}[htbp]
+\caption{Coeficientes do relógio por carga}
+\label{tab:calibracao}
+\centering
+\footnotesize
+\begin{tabularx}{\columnwidth}{@{}L r r@{}}
+\toprule
+\textbf{Passo} & \textbf{ns/unid.\ de carga} & \textbf{Amostras} \\
+\midrule
+\texttt{TerrainPass} (\texttt{FPV} e \texttt{MAP}) & 50,8  & 1080 \\
+\texttt{CropInstancesPass}                         & 87,8  & 540  \\
+\texttt{SuitabilityPass} (\texttt{AGRO})           & 1,55  & 90   \\
+\bottomrule
+\end{tabularx}
+\end{table}
+
+\subsubsection{Ponte de telemetria com o CoppeliaSim}
+\label{sec:ponte}
+A ponte (D49--D53; a D49 substitui a D26) conecta-se ao CoppeliaSim~4.10~Edu pela
+API remota ZeroMQ, em modo síncrono: a física só avança quando a ponte pede
+(D49). Cada passo de física tem 50\,ms e corresponde a três quadros de
+60\,Hz, nos quais vale a última leitura (D50); no teste de conexão, a latência
+média foi de 7,58\,ms por passo. O simulador fornece a posição da aeronave e o
+tempo simulado, sobre um campo de $5 \times 5$\,m. A entrada
+\texttt{terrain.below} é o solo da zona retangular da missão
+(\texttt{examples/missoes/}) sob essa posição, e \texttt{drone.battery} cai
+linearmente com o tempo simulado (D51). Cada passo é gravado em JSON Lines,
+junto com o alvo da missão e o solo sob o alvo, o que separa o atraso da
+física do atraso do \texttt{cooldown} (D53). Foram gravados dois voos,
+\texttt{pouso\_agua} (1260 quadros) e \texttt{borda\_agua} (720 quadros),
+descritos na Seção~\ref{sec:avaliacao}. Os experimentos não dependem do
+simulador aberto: reproduzem as gravações versionadas, quadro a quadro, em
+qualquer dos dois hospedeiros (D52). Duas regravações de \texttt{borda\_agua}
+com a cena versionada, reaberta antes de cada voo (\texttt{rep1} e
+\texttt{rep2}), coincidiram em todos os quadros, segundo
+\texttt{tools/comparar\_gravacoes.py} (D58); a gravação de referência difere
+delas apenas na posição, em no máximo $5{,}0 \times 10^{-8}$\,m, e gera o
+mesmo \textit{trace} (D60).
+
+\subsubsection{Ruído de percepção}
+\label{sec:percepcao}
+Para examinar a política sob leituras imperfeitas, a D56 aplica à posição
+percebida da aeronave, em cada eixo $x$ e $y$, um erro Gauss-Markov de
+primeira ordem com desvio padrão estacionário \texttt{erro\_pos\_m} (0; 0,02;
+0,05 e 0,1\,m) e constante de tempo de 0,5\,s, atualizado a 10\,Hz e mantido
+entre amostras nos quadros de 60\,Hz; a física não é alterada. Como
+\texttt{terrain.below} é recalculado a partir da posição percebida, o erro faz
+a leitura divergir do terreno real perto da borda da água. O erro depende só
+da semente e do índice do quadro; assim, uma execução com \texttt{cooldown} e
+outra sem ele recebem a mesma sequência, o que isola o efeito do
+\texttt{cooldown} da variação do sorteio. Os parâmetros e a hipótese foram
+fixados antes da execução, e a varredura roda no hospedeiro simulado, pois as
+transições não dependem do hospedeiro (Q4).
+
+%=======================================================================
+\section{Resultados e Discussão}
+\label{sec:resultados-discussao}
+
+\subsection{Compilação de um programa válido}
+\label{sec:compilacao}
+
+A Listagem~\ref{lst:ri} mostra a saída de
+\texttt{python -m dressgl.interpretador examples/safe\_setdown.dgl}, que
+compila a Listagem~\ref{lst:exemplo} e imprime a RI. A saída relaciona a regra
+à sua junção, às leituras de que o \texttt{GIVEN} depende, a cada efeito, com a
+linha de origem, e às leituras exigidas pelo \texttt{ASSERT}. Essa listagem é
+a forma estática da rastreabilidade de P7; a forma dinâmica é o
+\textit{trace} (Seção~\ref{sec:avaliacao}).
+
+\begin{lstlisting}[style=saida,caption={Representação intermediária gerada para
+a Listagem~\ref{lst:exemplo}.},label={lst:ri}]
+RULE SafeSetdownAssist (linha 7, prioridade 90) AROUND pass "TerrainPass"
+  GIVEN lê: drone.battery, terrain.below
+  EfeitoInject(passo='SuitabilityPass', fase='AFTER', ancora='TerrainPass', linha=11)
+  EfeitoSet(superficie='MAP', atributo='mode', valor='SUITABILITY', linha=12)
+  EfeitoHighlight(extremo='ARGMAX', campo='terrain.suitability', raio_m=400, linha=13)
+  EfeitoSet(superficie='AGRO', atributo='hz', valor=2, linha=14)
+  EfeitoScale(recurso='instances', nome='crops', fator=0.25, linha=15)
+  ASSERT lê: frame_budget, view:FPV.scale
+\end{lstlisting}
+
+\subsection{Diagnósticos de compilação}
+\label{sec:diagnosticos}
+
+A Listagem~\ref{lst:erros} contém um programa sintaticamente correto com seis
+erros semânticos, e a Listagem~\ref{lst:diag}, a saída de
+\texttt{python -m dressgl.semantica examples/erros\_semanticos.dgl}, sem o
+prefixo com o nome do arquivo. Dois dos erros reproduzem as deficiências (i) e
+(ii) da Seção~\ref{sec:relevancia}: a desativação da visão em primeira pessoa
+(V4, linha~8) e a frequência sem unidade (V2, linha~9), construções que a
+Listagem~\ref{lst:python} aceitaria e que só falhariam em operação. Os demais
+mostram uma referência a um nome inexistente no modelo (V1), uma condição contraditória
+(V7, posicionada no \texttt{AND} que a forma), uma regra cujo ponto de junção
+depende de um passo que ela própria injeta (V5) e um contrato sobre uma grandeza
+que o hospedeiro não mede (V8). Todos os erros são relatados em uma única
+execução, ordenados por posição.
+
+\begin{blocolst}
+\begin{lstlisting}[style=dsl]
+POLICY AgroViewSC {
+  budget = 16.67 ms;
+}
+
+RULE PerdaGps PRIORITY 80
+  GIVEN drone.altitude < 10 m
+  WHEN  AROUND pass "TerrainPass"
+  THEN  SET view "FPV".enabled = false;
+        SET view "AGRO".hz = 2;
+END
+
+RULE PousoImpossivel PRIORITY 70
+  GIVEN drone.battery < 10 % AND drone.battery > 20 %
+  WHEN  AROUND pass "SuitabilityPass"
+  THEN  INJECT pass "SuitabilityPass" AFTER "TerrainPass";
+  ASSERT drone.battery > 5 %
+END
+\end{lstlisting}
+\legendalst{lst:erros}{Programa com erros semânticos
+(\texttt{examples/\allowbreak erros\_semanticos.dgl}).}
+\end{blocolst}
+
+\begin{lstlisting}[style=saida,caption={Diagnósticos emitidos para a
+Listagem~\ref{lst:erros}.},label={lst:diag}]
+6:9: erro semântico [V1]: telemetria drone.altitude não existe no modelo; disponíveis: drone.battery, frame_budget, terrain.below, terrain.suitability
+8:9: erro semântico [V4]: a superfície "FPV" é CRITICA e não pode ser desativada
+9:30: erro semântico [V2]: view "AGRO".hz exige unidade Hz
+13:30: erro semântico [V7]: a condição GIVEN de PousoImpossivel nunca é verdadeira no domínio do modelo; a regra é inalcançável
+14:9: erro semântico [V5]: WHEN AROUND pass "SuitabilityPass": o passo é injetado pela própria regra, que dependeria de si mesma para disparar
+16:10: erro semântico [V8]: ASSERT usa drone.battery, que o hospedeiro não mede; declare um instrumento para ela em [telemetria]
+6 erro(s), 0 aviso(s)
+\end{lstlisting}
+
+Os diagnósticos léxicos e sintáticos seguem o mesmo formato
+\texttt{linha:coluna}, por exemplo
+\texttt{1:6: erro léxico: caractere inesperado '@'} e
+\texttt{8:9: erro sintático: esperado 'THEN', encontrado 'SUPPRESS'}.
+
+\subsection{Testes automatizados}
+\label{sec:testes}
+
+A Tabela~\ref{tab:testes} resume os 223 testes. O comando
+\texttt{python -m pytest -q} executa os 222 rápidos, em cerca de 10\,s; o teste
+marcado como \texttt{lento}, que regenera \texttt{results/metricas\_coppelia.csv}
+e o compara com a versão versionada em cerca de 1\,min, é executado por
+\texttt{python -m pytest -q -m lento} (D59). Os testes de \texttt{test\_artigo}
+fixam as Listagens~\ref{lst:ri} e~\ref{lst:diag}: se o compilador mudar, o
+texto do artigo precisa mudar junto. Os de
+\texttt{test\_experimentos} fixam os números da Tabela~\ref{tab:metricas}, e
+os de \texttt{test\_regressao\_csv}, os de
+\texttt{results/metricas\_coppelia.csv} e
+\texttt{results/varredura\_ruido.csv}, que alimentam as
+Tabelas~\ref{tab:coppelia} e~\ref{tab:varredura}.
+
+\begin{table}[htbp]
+\caption{Testes automatizados por grupo}
+\label{tab:testes}
+\centering
+\footnotesize
+\setlength{\tabcolsep}{4pt}
+\begin{tabularx}{\columnwidth}{@{}L r@{}}
+\toprule
+\textbf{Grupo (arquivos)} & \textbf{Testes} \\
+\midrule
+Léxico, gramática e sintático (\texttt{test\_lexer}, \texttt{test\_gramatica},
+\texttt{test\_parser}) & 36 \\
+Semântica e modelo (\texttt{test\_semantica}) & 57 \\
+RI e motor (\texttt{test\_interpretador}, \texttt{test\_motor}) & 25 \\
+Hospedeiro simulado e Tabela~\ref{tab:metricas} (\texttt{test\_simulador},
+\texttt{test\_experimentos}) & 29 \\
+Contrato e núcleo sem NumPy (\texttt{test\_hospedeiro},
+\texttt{test\_nucleo\_sem\_numpy}) & 5 \\
+AgroView-SC: hospedeiro, ordem dos passos, render e relógio
+(\texttt{test\_agroview\_hospedeiro}, \texttt{test\_agroview\_ordem},
+\texttt{test\_agroview\_render}, \texttt{test\_relogio\_d48}) & 40 \\
+Ponte e experimentos com o CoppeliaSim (\texttt{test\_ponte\_coppelia},
+\texttt{test\_experimentos\_coppelia}) & 14 \\
+Ruído de percepção (\texttt{test\_percepcao}) & 12 \\
+Regressão dos CSVs (\texttt{test\_regressao\_csv}, inclui 1 \texttt{lento}) & 2 \\
+Artigo e pacote (\texttt{test\_artigo}, \texttt{test\_pacote}) & 3 \\
+\midrule
+\textbf{Total} & \textbf{223} \\
+\bottomrule
+\end{tabularx}
+\end{table}
+
+\subsection{Avaliação experimental}
+\label{sec:avaliacao}
+
+A avaliação examina o comportamento, em execução, das políticas compiladas,
+orientada por cinco questões:
+\begin{itemize}
+\item[\textbf{Q1}] As compensações declaradas em \texttt{THEN} mantêm o custo
+do quadro dentro do orçamento, em comparação com uma política que apenas reage
+ao evento sem compensá-lo? (F5, F6, P6)
+\item[\textbf{Q2}] Qual é o efeito do \texttt{cooldown} sobre a oscilação de
+ativação e sobre o atraso de resposta? (F1, P6)
+\item[\textbf{Q3}] Com mais de uma regra ativa, a composição produz o plano
+previsto pela Tabela~\ref{tab:composicao} e registra os conflitos de forma
+rastreável? (P6, P7)
+\item[\textbf{Q4}] As conclusões de Q1 dependem do hospedeiro, isto é, se
+mantêm quando o custo é medido no AgroView-SC em vez de modelado? (P6, P8)
+\item[\textbf{Q5}] Com telemetria de origem física e ruído de percepção, o
+\texttt{cooldown} continua reduzindo as transições, e a que custo? (F1, P6, P8)
+\end{itemize}
+
+Q1--Q3 usam o hospedeiro simulado e os cenários sintéticos; Q4 usa as duas
+gravações do CoppeliaSim nos dois hospedeiros, com o AgroView-SC no relógio
+\texttt{carga}; Q5 usa a gravação \texttt{borda\_agua}, sem e com erro de
+posição. A Tabela~\ref{tab:condicoes}
+relaciona as sete condições em que o cenário de bateria em reserva sobre
+superfície imprópria é examinado e a evidência de cada uma.
+
+\begin{table}[htbp]
+\caption{Condições de avaliação do cenário único e evidência correspondente}
+\label{tab:condicoes}
+\centering
+\scriptsize
+\setlength{\tabcolsep}{3pt}
+\begin{tabularx}{\columnwidth}{@{}>{\raggedright\arraybackslash}p{0.25\columnwidth} L c@{}}
+\toprule
+\textbf{Condição} & \textbf{Evidência} & \textbf{Q} \\
+\midrule
+Operação normal & quadros anteriores à ativação em \texttt{listagem3}
+(0--219) e nas duas gravações & Q1, Q4 \\
+\addlinespace
+Ativação e compensação & DSL $\times$ \textit{baseline} em \texttt{listagem3}
+e nas duas gravações, nos dois hospedeiros & Q1, Q4 \\
+\addlinespace
+Oscilação & \texttt{oscilacao} (sintético) e \texttt{borda\_agua} (física) &
+Q2, Q5 \\
+\addlinespace
+Ruído no custo & \texttt{listagem3\_ruido} & Q1 \\
+\addlinespace
+Ruído na percepção & erro de posição da D56 em \texttt{borda\_agua}: 4 níveis (3 não nulos)
+$\times$ 10 sementes, 40 pares & Q5 \\
+\addlinespace
+Composição de regras & múltiplas regras nos três cenários simulados e nas duas
+gravações & Q3, Q4 \\
+\addlinespace
+Rejeição estática & Listagens~\ref{lst:erros} e~\ref{lst:diag} (V1, V2, V4,
+V5, V7, V8) & -- \\
+\bottomrule
+\end{tabularx}
+\end{table}
+
+\textbf{Programas comparados.}
+(a)~\textit{DSL}: a Listagem~\ref{lst:exemplo};
+(b)~\textit{baseline}: a mesma regra, com a mesma \texttt{POLICY} e as mesmas
+cláusulas \texttt{GIVEN}, \texttt{WHEN} e \texttt{ASSERT}, mas sem as
+compensações (\texttt{SET view "AGRO".hz} e \texttt{SCALE}), o que isola o
+efeito destas;
+(c)~\textit{DSL sem cooldown}: o programa (a) com \texttt{cooldown} igual a
+zero, como ablação;
+(d)~\textit{múltiplas regras}: o programa (a) acrescido de uma regra sintética,
+\texttt{EconomiaBateria} (\texttt{PRIORITY 50}), ativa com bateria abaixo de
+25\,\%, que escreve \texttt{view "MAP".mode = NOMINAL},
+\texttt{view "AGRO".hz = 1 Hz} e \texttt{SCALE instances "crops" BY 0.5},
+construída para provocar escritas concorrentes.
+
+\textbf{Cenários sintéticos.}
+\texttt{listagem3}: 300 quadros; a bateria decresce linearmente de 40\,\% para
+10\,\%, e a aeronave sobrevoa solo exposto (\texttt{BARE\_SOIL}), exceto entre
+os quadros 180 e 259, em que sobrevoa água. A bateria cruza 18\,\% no quadro
+220; o \texttt{GIVEN} da Listagem~\ref{lst:exemplo} é verdadeiro nos quadros
+220 a 259 (40 quadros, 13,33\,\% do total);
+\texttt{listagem3\_ruido}: o mesmo cenário, com ruído gaussiano aditivo sobre o
+custo, sorteado a cada quadro com $\sigma = 0{,}5$\,ms e semente 42; como a
+semente é fixa, a mesma sequência de ruído é aplicada a todos os programas;
+\texttt{oscilacao}: 150 quadros sobre água, com a bateria em 19\,\% e quedas a
+17\,\% nos quadros 50--54, 60--64 e de 70 em diante.
+
+\textbf{Cenários físicos (gravações do CoppeliaSim).}
+\texttt{pouso\_agua}: 1260 quadros (21\,s a 60\,Hz), em que a condição do
+\texttt{GIVEN} se torna verdadeira uma vez, com uma ativação e uma desativação
+da regra; \texttt{borda\_agua}: 720 quadros (12\,s), em que a aeronave cruza a
+borda de um corpo d'água e \texttt{terrain.below} muda seis vezes, o que produz
+três ativações e três desativações. Nas duas gravações, as mudanças vêm da
+dinâmica do voo na cena, e não de trechos programados como em
+\texttt{oscilacao}.
+
+\textbf{Métricas.} Por par programa--cenário: porcentagem de quadros acima do
+orçamento de 16,67\,ms; pior quadro; ativações e desativações; retenções pelo
+\texttt{cooldown}; violações de \texttt{ASSERT}; conflitos de composição; e
+atraso de ativação, em quadros, entre o quadro em que a condição se torna
+verdadeira e o quadro em que a regra é ativada.
+
+\textbf{Reprodutibilidade.} A Tabela~\ref{tab:metricas} é gerada por
+\texttt{python -m dressgl.experimentos}, que executa a matriz de $4 \times 3$
+combinações no hospedeiro simulado e grava \texttt{results/metricas.csv} e
+\texttt{results/metricas.md}; seus números não mudaram desde o \textit{commit}
+\texttt{ddd62d0} da versão~1.0. A Tabela~\ref{tab:coppelia} reproduz
+\texttt{results/metricas\_coppelia.csv}, gerado por
+\texttt{python -m ponte\_coppelia.experimentos} (D54), com os quatro programas sobre as duas
+gravações nos dois hospedeiros, e a Tabela~\ref{tab:varredura} resume
+\texttt{results/varredura\_ruido.csv}, gerado por
+\texttt{python tools/varredura\_ruido.py} sobre
+\texttt{examples/missoes/margem\_ruido.toml} (4 níveis de erro $\times$ 10
+sementes $\times$ 2 programas, 80 execuções). Os três CSVs são versionados e
+fixados por testes de regressão (Seção~\ref{sec:testes}); os \textit{traces}
+JSON Lines não são versionados e são regeneráveis pelos mesmos comandos. Todos
+os resultados correspondem à \textit{tag} \texttt{v3.0}.
+
+\begin{table*}[t]
+\caption{Métricas por programa e cenário no hospedeiro simulado, com custo
+modelado pela Eq.~(\ref{eq:custo})}
+\label{tab:metricas}
+\centering
+\footnotesize
+\setlength{\tabcolsep}{5pt}
+\begin{adjustbox}{max width=\textwidth}
+\begin{tabular}{@{}llrrcrrrc@{}}
+\toprule
+\textbf{Programa} & \textbf{Cenário} &
+\textbf{\cab{\%\\acima}} & \textbf{\cab{Pior\\(ms)}} &
+\textbf{\cab{Ativ./\\desat.}} & \textbf{Retenções} &
+\textbf{\cab{Viol.\\ASSERT}} & \textbf{Conflitos} &
+\textbf{\cab{Atraso\\méd./máx.}} \\
+\midrule
+DSL              & \texttt{listagem3}        & 0,00  & 15,00 & 1/1 & 0  & 0  & 0  & 0,00/0 \\
+DSL              & \texttt{listagem3\_ruido} & 0,00  & 16,32 & 1/1 & 0  & 0  & 0  & 0,00/0 \\
+DSL              & \texttt{oscilacao}        & 0,00  & 15,00 & 2/1 & 10 & 0  & 0  & 2,50/5 \\
+\addlinespace
+Baseline         & \texttt{listagem3}        & 13,33 & 18,00 & 1/1 & 0  & 40 & 0  & 0,00/0 \\
+Baseline         & \texttt{listagem3\_ruido} & 13,33 & 18,79 & 1/1 & 0  & 40 & 0  & 0,00/0 \\
+Baseline         & \texttt{oscilacao}        & 59,33 & 18,00 & 2/1 & 10 & 89 & 0  & 2,50/5 \\
+\addlinespace
+DSL s/ cooldown  & \texttt{listagem3}        & 0,00  & 15,00 & 1/1 & 0  & 0  & 0  & 0,00/0 \\
+DSL s/ cooldown  & \texttt{listagem3\_ruido} & 0,00  & 16,32 & 1/1 & 0  & 0  & 0  & 0,00/0 \\
+DSL s/ cooldown  & \texttt{oscilacao}        & 0,00  & 15,00 & 3/2 & 0  & 0  & 0  & 0,00/0 \\
+\addlinespace
+Múltiplas regras & \texttt{listagem3}        & 0,00  & 15,00 & 2/1 & 0  & 0  & 40 & 0,00/0 \\
+Múltiplas regras & \texttt{listagem3\_ruido} & 0,00  & 16,32 & 2/1 & 0  & 0  & 40 & 0,00/0 \\
+Múltiplas regras & \texttt{oscilacao}        & 0,00  & 15,00 & 3/1 & 10 & 0  & 90 & 1,67/5 \\
+\bottomrule
+\end{tabular}
+\end{adjustbox}
+\end{table*}
+
+\begin{table}[htbp]
+\caption{Custo modelado do quadro por configuração ativa}
+\label{tab:custos}
+\centering
+\footnotesize
+\begin{tabularx}{\columnwidth}{@{}L r@{}}
+\toprule
+\textbf{Configuração ativa} & \textbf{Custo (ms)} \\
+\midrule
+Nenhuma regra (configuração padrão)             & 15,0 \\
+\texttt{SafeSetdownAssist} (programa DSL)       & 13,4 \\
+Regra sem compensações (\textit{baseline})      & 18,0 \\
+\texttt{EconomiaBateria}                        & 11,2 \\
+\texttt{SafeSetdownAssist} e \texttt{EconomiaBateria} & 13,2 \\
+\bottomrule
+\end{tabularx}
+\end{table}
+
+\textbf{Q1: compensações e orçamento.} No cenário \texttt{listagem3}, a
+política em DRESS-GL não excede o orçamento em nenhum quadro; seu pior quadro
+(15,00\,ms) é o da configuração padrão, anterior à ativação. O
+\textit{baseline} excede o orçamento em 13,33\,\% dos quadros: são os 40
+quadros que medem o efeito da regra, com 18,00\,ms cada, e cada um registra uma
+violação do contrato \texttt{frame\_budget <= 16.67 ms}. A
+Tabela~\ref{tab:custos} explica a diferença. Das ações mantidas no
+\textit{baseline}, apenas a injeção do \texttt{SuitabilityPass} tem custo no
+modelo, de 3,0\,ms, que eleva o quadro de 15,0 para 18,0\,ms; o modo
+\texttt{SUITABILITY} e o destaque não entram na Eq.~(\ref{eq:custo}). As
+compensações da Listagem~\ref{lst:exemplo} retiram 4,6\,ms (3,0\,ms pela
+densidade de \texttt{crops} a 0,25 e 1,6\,ms pela camada agronômica a 2\,Hz),
+de modo que o quadro com a regra ativa custa 13,4\,ms, abaixo da configuração
+padrão. No cenário \texttt{oscilacao}, a diferença se amplia (0\,\% contra
+59,33\,\%, com 89 violações), porque a regra permanece ativa por mais tempo. O
+ruído não altera as porcentagens em nenhum programa; eleva apenas o pior
+quadro, para 16,32\,ms na DSL, ainda abaixo do orçamento, e para 18,79\,ms no
+\textit{baseline}. Esse resultado mostra que as compensações declaradas têm o
+efeito pretendido \emph{dentro do modelo} de custo, com parâmetros escolhidos
+pelos autores; Q4 examina o mesmo par de programas no AgroView-SC.
+
+\textbf{Q2: efeito do cooldown.} Em \texttt{listagem3}, as execuções com e sem
+\texttt{cooldown} são idênticas: a ativação (quadro 220) e a desativação
+(quadro 260) distam 40 quadros, mais que o período de 10. Em
+\texttt{oscilacao}, sem \texttt{cooldown} a regra segue cada queda: ativa em 50,
+60 e 70 e desativa em 55 e 65 (3 ativações e 2 desativações). Com
+\texttt{cooldown} de 10 quadros, a desativação pedida em 55 fica retida até a
+condição voltar a valer em 60, a regra desativa em 65 e a reativação pedida em
+70 só ocorre em 75: 2 ativações, 1 desativação e 10 retenções. A contrapartida
+é o atraso de ativação, que passa de zero para 2,50 quadros em média e 5 no
+máximo. Como nenhuma das variantes excede o orçamento nesse cenário, o
+\texttt{cooldown} atua sobre a estabilidade da configuração exibida, e não sobre
+o custo; a troca entre estabilidade e tempo de resposta fica explícita e
+ajustável na \texttt{POLICY}.
+
+\textbf{Q3: composição de múltiplas regras.} Em \texttt{listagem3},
+\texttt{EconomiaBateria} permanece ativa do quadro 150 até o fim, e
+\texttt{SafeSetdownAssist}, entre os quadros 220 e 259. O \textit{trace}
+registra um conflito por quadro de coatividade (40 em \texttt{listagem3} e 90
+em \texttt{oscilacao}), todos sobre \texttt{view "MAP".mode}, atributo
+enumerado sem composição monotônica: a escrita é resolvida pela prioridade
+(90 contra 50), e cada registro identifica a regra vencedora e a perdedora
+(Listagem~\ref{lst:trace}, extraída de
+\texttt{trace\_multiplas\_\_oscilacao.jsonl}). Para os atributos numéricos, a
+composição pelo mínimo dispensa resolução de conflito: o plano composto usa
+\texttt{view "AGRO".hz} igual a 1\,Hz, valor de \texttt{EconomiaBateria}, e
+\texttt{instances "crops"} igual a 0,25, valor de \texttt{SafeSetdownAssist},
+com custo de 13,2\,ms. Após a desativação de \texttt{SafeSetdownAssist}, o
+plano volta ao de \texttt{EconomiaBateria} (11,2\,ms). O orçamento é respeitado
+em todos os quadros dos três cenários.
+
+\begin{blocolst}
+\begin{lstlisting}[style=saida]
+{"quadro": 148,
+ "ativas": ["SafeSetdownAssist", "EconomiaBateria"],
+ "conflitos": [{"alvo": "MAP.mode", "vencedora": "SafeSetdownAssist",
+                "perdedora": "EconomiaBateria"}],
+ "violacoes": [],
+ "plano": {"sets": {"MAP.mode": "SUITABILITY", "AGRO.hz": 1},
+           "escalas": {"instances.crops": 0.25},
+           "injecoes": [{"passo": "SuitabilityPass", "fase": "AFTER",
+                         "ancora": "TerrainPass", "linha": 11}], ...},
+ "leituras": {"drone.battery": 17.0, "frame_budget": 13.2,
+              "view:MAP.mode": "SUITABILITY", "view:AGRO.hz": 1, ...}}
+\end{lstlisting}
+\legendalst{lst:trace}{Trecho do registro do quadro 148 do \textit{trace} de
+múltiplas regras no cenário \texttt{oscilacao} (campos omitidos indicados por
+\texttt{...}).}
+\end{blocolst}
+
+\begin{table*}[t]
+\caption{Programas nas gravações do CoppeliaSim, nos dois hospedeiros
+(AgroView-SC com relógio por carga)}
+\label{tab:coppelia}
+\centering
+\footnotesize
+\setlength{\tabcolsep}{5pt}
+\begin{adjustbox}{max width=\textwidth}
+\begin{tabular}{@{}lllrrcrr@{}}
+\toprule
+\textbf{Gravação} & \textbf{Hospedeiro} & \textbf{Programa} &
+\textbf{\cab{\%\\acima}} & \textbf{\cab{Pior\\(ms)}} &
+\textbf{\cab{Ativ./\\desat.}} & \textbf{\cab{Viol.\\ASSERT}} &
+\textbf{Conflitos} \\
+\midrule
+\texttt{borda\_agua} & Simulado    & DSL              & 0,00  & 15,00 & 3/3 & 0   & 0   \\
+\texttt{borda\_agua} & Simulado    & DSL s/ cooldown  & 0,00  & 15,00 & 3/3 & 0   & 0   \\
+\texttt{borda\_agua} & Simulado    & Baseline         & 39,17 & 18,00 & 3/3 & 282 & 0   \\
+\texttt{borda\_agua} & Simulado    & Múltiplas regras & 0,00  & 15,00 & 4/3 & 0   & 282 \\
+\addlinespace
+\texttt{borda\_agua} & AgroView-SC & DSL              & 0,00  & 14,22 & 3/3 & 0   & 0   \\
+\texttt{borda\_agua} & AgroView-SC & DSL s/ cooldown  & 0,00  & 14,22 & 3/3 & 0   & 0   \\
+\texttt{borda\_agua} & AgroView-SC & Baseline         & 0,00  & 14,33 & 3/3 & 0   & 0   \\
+\texttt{borda\_agua} & AgroView-SC & Múltiplas regras & 0,00  & 14,22 & 4/3 & 0   & 282 \\
+\addlinespace
+\texttt{pouso\_agua} & Simulado    & DSL              & 0,00  & 15,00 & 1/1 & 0   & 0   \\
+\texttt{pouso\_agua} & Simulado    & DSL s/ cooldown  & 0,00  & 15,00 & 1/1 & 0   & 0   \\
+\texttt{pouso\_agua} & Simulado    & Baseline         & 20,48 & 18,00 & 1/1 & 258 & 0   \\
+\texttt{pouso\_agua} & Simulado    & Múltiplas regras & 0,00  & 15,00 & 2/1 & 0   & 258 \\
+\addlinespace
+\texttt{pouso\_agua} & AgroView-SC & DSL              & 0,00  & 14,22 & 1/1 & 0   & 0   \\
+\texttt{pouso\_agua} & AgroView-SC & DSL s/ cooldown  & 0,00  & 14,22 & 1/1 & 0   & 0   \\
+\texttt{pouso\_agua} & AgroView-SC & Baseline         & 0,00  & 14,33 & 1/1 & 0   & 0   \\
+\texttt{pouso\_agua} & AgroView-SC & Múltiplas regras & 0,00  & 14,22 & 2/1 & 0   & 258 \\
+\bottomrule
+\end{tabular}
+\end{adjustbox}
+\end{table*}
+
+\textbf{Q4: dependência do hospedeiro.} A Tabela~\ref{tab:coppelia} executa os
+quatro programas sobre as duas gravações, nos dois hospedeiros; em todas as
+linhas, as retenções e o atraso de ativação são nulos. No hospedeiro simulado,
+as gravações confirmam Q1: a DSL não excede o orçamento, e o \textit{baseline}
+o excede em 39,17\,\% dos quadros de \texttt{borda\_agua} e em 20,48\,\% dos de
+\texttt{pouso\_agua}, com uma violação de \texttt{ASSERT} em cada um desses
+quadros (282 e 258). No AgroView-SC, nenhum programa excede o orçamento ou viola
+contrato: o pior quadro é de 14,22\,ms na DSL e de 14,33\,ms no
+\textit{baseline}. A direção do efeito se mantém, já que o \textit{baseline}
+continua mais caro, mas a diferença no pior quadro cai de 3,00\,ms para
+0,11\,ms, e as compensações deixam de ser necessárias para cumprir o orçamento.
+A razão está no nível de custo, e não no custo do passo injetado: no
+AgroView-SC, o quadro sem regra ativa custa cerca de 3,9\,ms, contra 15,0\,ms
+no modelo, e a injeção, sobreposta a \texttt{FPV} e \texttt{MAP}, acrescenta
+cerca de 9,3\,ms, de modo que mesmo o \textit{baseline} fica abaixo do
+orçamento. As compensações quase não alteram o pior quadro: o
+\texttt{CropInstancesPass} custa cerca de 0,16\,ms neste renderizador, contra
+4\,ms no modelo, e reduzi-lo a 0,25 retira os 0,11\,ms observados; a camada
+\texttt{AGRO} a 2\,Hz é redesenhada com menos frequência, mas, por decimação
+(D43), cada redesenho custa o mesmo, e o pico não muda. Os 9,3\,ms das
+sobreposições usam o coeficiente do \texttt{SuitabilityPass} medido apenas em
+\texttt{AGRO}: um erro de cerca de 25\,\% nesse coeficiente consumiria a
+margem de 2,34\,ms do \textit{baseline} e a de 2,45\,ms da DSL, estimadas,
+além disso, pelo relógio \texttt{carga}, que tende a ficar um pouco abaixo do
+tempo de parede (Seção~\ref{sec:ameacas}). O que se transfere entre hospedeiros é, assim, o
+comportamento do motor, e não a conclusão sobre o orçamento: ativações,
+desativações e conflitos coincidem nos dois hospedeiros (por exemplo, 4/3 e 282
+conflitos no programa de múltiplas regras em \texttt{borda\_agua}), porque
+dependem só da telemetria. A conclusão de Q1 vale dentro do modelo de custo, e
+não para este renderizador.
+
+\begin{table}[htbp]
+\caption{Varredura do erro de posição (D56) na gravação borda\_agua: médias
+de 10 sementes por nível}
+\label{tab:varredura}
+\centering
+\footnotesize
+\setlength{\tabcolsep}{3pt}
+\begin{adjustbox}{max width=\columnwidth}
+\begin{tabular}{@{}lrrrrc@{}}
+\toprule
+\textbf{\cab{Erro\\(m)}} & \textbf{\cab{Quadros\\diverg.}} &
+\textbf{\cab{Trocas e trans.\\s/ cool.}} &
+\textbf{\cab{Trans.\\c/ cool.}} & \textbf{\cab{Reten-\\ções}} &
+\textbf{\cab{Pares c/\\redução}} \\
+\midrule
+0,00 & 0,0   & 6,0  & 6,0  & 0,0  & 0/10 \\
+0,02 & 102,9 & 13,2 & 12,4 & 12,7 & 3/10 \\
+0,05 & 160,8 & 16,8 & 14,4 & 16,9 & 6/10 \\
+0,10 & 193,5 & 18,9 & 16,7 & 26,0 & 7/10 \\
+\bottomrule
+\end{tabular}
+\end{adjustbox}
+\end{table}
+
+\textbf{Q5: telemetria física e cooldown sob ruído.} Sem erro de posição, as
+seis trocas de terreno de \texttt{borda\_agua} produzem 3 ativações e 3
+desativações com e sem \texttt{cooldown}, sem retenções
+(Tabela~\ref{tab:coppelia}): as trocas físicas distam mais que 10 quadros, e o
+\texttt{cooldown} não atua. A oscilação rápida surge com o erro de posição da
+D56 (Tabela~\ref{tab:varredura}). Perto da borda, a leitura percebida diverge
+da real em 14,3\,\% a 26,9\,\% dos 720 quadros, e as trocas percebidas sobem
+de 6 para 13,2, 16,8 e 18,9, em média. Sem \texttt{cooldown}, a regra segue
+cada troca percebida, e as transições (ativações mais desativações) igualam as
+trocas. Com \texttt{cooldown} de 10 quadros, as transições caem 6,1\,\%,
+14,3\,\% e 11,6\,\% nos três níveis; descontadas as seis transições reais, a
+queda das espúrias é de 11\,\%, 22\,\% e 17\,\%. Dos 30 pares com erro, o
+\texttt{cooldown} reduziu as transições em 16 e as igualou em 14, sem
+aumentá-las em nenhum. Pelo teste do sinal unilateral sobre as ativações pareadas, a diferença é
+significativa a 5\,\% nos níveis de 0,05 e 0,1\,m ($p = 0{,}016$ e
+$0{,}008$), mas não no de 0,02\,m ($p = 0{,}125$). O efeito é parcial: mesmo com \texttt{cooldown}, restam
+de 6,4 a 10,7 transições espúrias por execução. O custo aparece nas retenções,
+12,7, 16,9 e 26,0 mudanças adiadas por execução, que podem incluir trocas
+reais; a varredura não mede o atraso resultante. Nenhuma das 80 execuções
+violou contrato ou registrou conflito. A troca entre estabilidade e tempo de
+resposta de Q2 permanece com percepção imperfeita, mas um \texttt{cooldown} de
+10 quadros, sozinho, não elimina as transições espúrias.
+
+\subsection{Verificação dos requisitos}
+\label{sec:requisitos-verif}
+
+A Tabela~\ref{tab:requisitos} confronta os requisitos da
+Seção~\ref{sec:requisitos} com a evidência obtida. Quanto à pergunta de se a
+DSL simplifica a tarefa no domínio, a evidência deste trabalho é a capacidade
+de verificação: erros que a formulação da Listagem~\ref{lst:python} aceitaria,
+como os da Listagem~\ref{lst:erros}, são rejeitados antes da execução, e a
+interação entre regras é decidida por regras de composição explícitas, e não
+pela ordem de registro. A execução do mesmo programa compilado em dois
+hospedeiros mostra, além disso, que a política é independente da
+implementação do compositor. A simplificação para o especialista, no sentido
+de legibilidade e facilidade de modificação, não foi medida
+(Seção~\ref{sec:ameacas}).
+
+\begin{table*}[t]
+\caption{Verificação dos requisitos}
+\label{tab:requisitos}
+\centering
+\scriptsize
+\setlength{\tabcolsep}{3pt}
+\begin{tabularx}{\textwidth}{@{}l >{\raggedright\arraybackslash}p{0.14\textwidth} L@{}}
+\toprule
+\textbf{Req.} & \textbf{Situação} & \textbf{Evidência} \\
+\midrule
+F1 & atendido & \texttt{POLICY} com \texttt{budget}, \texttt{reserve} e \texttt{cooldown} verificados (V2, V3, C2) e usados pelo motor; Q2 e Q5 \\
+F2 & atendido & gabarito completo na gramática (Listagem~\ref{lst:ebnf}) e na AST; prioridade inteira verificada no sintático \\
+F3 & atendido & \texttt{AND}, \texttt{OR}, \texttt{NOT}, \texttt{IN} e unidades; testes de precedência e de V1--V3 em \texttt{GIVEN} \\
+F4 & parcial & junção analisada, verificada (V5) e preservada na RI; em nenhum dos dois hospedeiros o ponto de junção altera a execução \\
+F5 & atendido, com ressalva & as seis ações compilam e são compostas; \texttt{SET}, \texttt{SCALE} e \texttt{INJECT} alteram o custo nos dois hospedeiros; \texttt{HIGHLIGHT} e \texttt{MARK} chegam ao plano, mas não são desenhados \\
+F6 & atendido & \texttt{ASSERT} verificado estaticamente (V8, C1) e monitorado em execução no quadro $q+1$; 40 e 89 violações no \textit{baseline} simulado, 282 e 258 nas gravações; nenhuma no AgroView-SC (Q4) \\
+F7 & atendido & a gramática não tem construções de laço, recursão, função ou aritmética \\
+\addlinespace
+P1 & atendido & AFD da Fig.~\ref{fig:afd}; testes do analisador léxico \\
+P2 & atendido & descendente recursivo; propriedade LL(1) verificada por teste; recuperação em modo pânico \\
+P3 & atendido & tabela de símbolos derivada de \texttt{agroview.toml}, validada na carga; resolução por espaço de nomes \\
+P4 & atendido & V1--V8 com posição (Tabela~\ref{tab:verificacoes}, Listagem~\ref{lst:diag}) \\
+P5 & atendido & RI de condição e efeitos imutáveis (Listagem~\ref{lst:ri}); só é gerada para programas sem erros \\
+P6 & atendido nos dois hospedeiros & motor com composição, \texttt{cooldown} e \texttt{ASSERT}; Q1--Q5; não integrado a um compositor sobre GPU \\
+P7 & atendido & RI com linha de origem de cada efeito; \textit{trace} com regra vencedora e perdedora de cada conflito (Listagem~\ref{lst:trace}) \\
+P8 & atendido & contrato D40 com duas implementações; núcleo sem NumPy verificado em subprocesso; ponte com gravações de reprodução determinística (D58); Q4 e Q5 \\
+\bottomrule
+\end{tabularx}
+\end{table*}
+
+\subsection{Ameaças à validade}
+\label{sec:ameacas}
+
+\textbf{Validade de construção.} No hospedeiro simulado, os custos são
+modelados e calibrados manualmente. No AgroView-SC, são medidos, mas sobre um
+renderizador em CPU e em resolução reduzida (D42), e não sobre um compositor de
+produção em GPU; o custo relativo dos passos difere, por isso, do que se
+esperaria em GPU. O relógio por carga é linear e não tem termo fixo por passo,
+de modo que passos com custo fixo relevante, como o
+\texttt{CropInstancesPass}, ficam subestimados quando a carga cai; ele mede os
+passos, e não o intervalo entre eles, e tende a ficar um pouco abaixo do
+relógio \texttt{tempo} (D48). O hospedeiro simulado usa o custo médio das
+superfícies decimadas, e o AgroView-SC, o custo de cada quadro, com os picos
+dos quadros em que elas são redesenhadas (D43, D46); por isso, o pior quadro
+só é comparável entre programas no mesmo hospedeiro. O \texttt{SuitabilityPass} foi calibrado apenas
+na superfície \texttt{AGRO}; as variantes desenhadas sobre \texttt{MAP} e
+\texttt{FPV} usam o mesmo coeficiente sem medição própria e respondem por cerca
+de 9,3 dos 14,22\,ms do pior quadro da DSL em Q4; a conclusão de que nenhum
+programa excede o orçamento no AgroView-SC depende, portanto, desse
+coeficiente. Os resultados do
+AgroView-SC usam o relógio \texttt{carga} e não foram repetidos no relógio
+\texttt{tempo}. O \texttt{frame\_budget} sem média (D46) torna o
+\texttt{ASSERT} sensível a quadros isolados. O \textit{baseline} foi construído
+pelos autores a partir da própria política em DRESS-GL; não é uma
+implementação imperativa independente, e a Listagem~\ref{lst:python} não foi
+executada. A independência da ordem de composição foi testada para pares de
+regras nas duas ordens, mas não de forma exaustiva. V4 cobre apenas a
+desativação de superfícies críticas: uma redução de resolução da visão em
+primeira pessoa por \texttt{SCALE resolution} é aceita pelo compilador e só é
+detectada em execução, se houver \texttt{ASSERT} correspondente.
+
+\textbf{Validade interna.} A regra \texttt{EconomiaBateria} é sintética, criada
+para exercitar a composição, e não provém de procedimento operacional real. Os
+cenários produzem poucas ativações. O efeito do \texttt{cooldown} foi observado
+em um cenário oscilante sintético e, com telemetria física, apenas sob erro de
+posição: sem erro, as trocas de terreno de \texttt{borda\_agua} distam mais que
+10 quadros e não o acionam. A varredura usa uma única gravação, quatro níveis (três não nulos) de
+erro e dez sementes por nível, e não mede o atraso causado pelas retenções.
+Pontos de junção, destaques e marcas não influenciam nenhum dos hospedeiros. O
+atraso físico (D53), contado do primeiro quadro com o alvo da missão sobre a água ao primeiro quadro com a aeronave sobre a água e registrado em \texttt{results/metricas\_coppelia.csv} (36 quadros
+em \texttt{borda\_agua} e 24 em \texttt{pouso\_agua}), é o mesmo para todos os
+programas e para os dois hospedeiros; depende, portanto, só da gravação, e não
+da política. A gravação de referência de \texttt{borda\_agua} difere das regravações apenas
+na posição, em no máximo $5{,}0 \times 10^{-8}$\,m, e gera o mesmo
+\textit{trace} (D60); a cena de \texttt{pouso\_agua} não está versionada, e
+essa gravação não pode ser refeita. Como a geração de uma gravação depende do
+simulador, a evidência reproduzível é a gravação versionada, e não a sua
+regravação.
+
+\textbf{Validade externa.} A telemetria física vem de uma cena simplificada de
+$5 \times 5$\,m no CoppeliaSim, reproduzida a partir de gravações, sem laço
+fechado entre a política e o voo e sem aeronave real. A bateria cai
+linearmente com o tempo simulado, sem relação com o empuxo (D51); a
+classificação do solo é exata, dada a posição; e o ruído de percepção não foi
+calibrado contra um receptor real (D56). Apenas um dos seis
+cenários excepcionais da Seção~\ref{sec:requisitos} foi avaliado, por decisão
+de escopo (D57). As medições valem para a máquina de
+\texttt{results/ambiente.json}. Não foi conduzido o estudo de legibilidade com
+participantes, de modo que a hipótese de que a notação é mais auditável pelo
+especialista permanece não verificada~\cite{rodrigues2017}.
+
+%=======================================================================
+\section{Conclusão}
+\label{sec:conclusao}
+
+Este trabalho apresentou a DRESS-GL, linguagem específica de domínio externa e
+não Turing-completa para políticas de degradação gráfica em estações de
+controle de VANT, e seu processador, que cobre as análises léxica, sintática e
+semântica, compila as regras em uma representação intermediária de condição e
+efeitos e as executa por quadro. A gramática teve a propriedade LL(1)
+verificada automaticamente; as oito verificações semânticas rejeitam, antes da
+execução, construções que uma linguagem de propósito geral aceitaria, como a
+desativação de uma superfície crítica ou uma frequência sem unidade. Um
+contrato de hospedeiro permitiu executar o mesmo programa compilado sobre um
+hospedeiro de custo modelado e sobre o AgroView-SC, de custo medido, alimentado
+por telemetria gravada no CoppeliaSim. No hospedeiro simulado, as compensações
+declaradas mantiveram o quadro no orçamento, o \texttt{cooldown} tornou
+explícita a troca entre estabilidade e tempo de resposta, e a composição de
+regras registrou cada conflito de forma rastreável. No AgroView-SC, com o relógio por carga, nenhum
+programa excedeu o orçamento, nem mesmo o \textit{baseline}: a vantagem das
+compensações depende do modelo de custo, e a margem restante está condicionada a um
+coeficiente do \texttt{SuitabilityPass} medido só em \texttt{AGRO}, enquanto o
+comportamento do motor
+(ativações, desativações e conflitos) é idêntico nos dois hospedeiros. Com
+telemetria física e erro de posição, o \texttt{cooldown} reduziu as transições
+espúrias em 11\,\% a 22\,\%, sem eliminá-las. O objetivo geral foi atingido
+para o cenário avaliado, nos dois hospedeiros.
+
+Entre os desafios encontrados, destacam-se: manter a gramática LL(1) admitindo
+tanto referências simples (\texttt{frame\_budget}) quanto qualificadas
+(\texttt{view "FPV".scale}); incorporar a unidade ao \textit{token} numérico
+sem ambiguidade com identificadores (\texttt{10 frames} contra
+\texttt{10 mode}); lidar com as consequências da convenção léxica de
+enumerados em caixa alta, que obriga nomes de regra em PascalCase e exige
+validar o modelo do hospedeiro contra as palavras reservadas; decidir V6 e V7
+de forma exata sem recorrer a um resolvedor externo; definir a semântica
+temporal do \texttt{ASSERT}, verificado no quadro seguinte ao da aplicação do
+plano; separar a medição de custo da própria renderização, o que levou ao
+relógio por carga calibrado; e tornar reproduzíveis experimentos que dependem
+de um simulador físico, o que levou a avaliar sobre gravações versionadas.
+
+Como expansão, propõem-se: medir o custo sobre um compositor em GPU;
+exercitar os pontos de junção em execução e desenhar \texttt{HIGHLIGHT} e
+\texttt{MARK}; acrescentar termo fixo por passo ao relógio por carga e
+calibrar o \texttt{SuitabilityPass} nas demais superfícies; fechar o laço entre
+a política e o voo no CoppeliaSim; avaliar períodos de \texttt{cooldown}
+maiores e filtragem da percepção contra o erro de posição; declarar no modelo a
+telemetria dos outros
+cinco cenários excepcionais; estender V4 a reduções de resolução e de
+frequência de superfícies críticas; verificar exaustivamente os até $2^n$
+planos alcançáveis de um programa; oferecer uma janela de visualização das
+gravações, como ferramenta de demonstração; aceitar identificadores Unicode e
+números negativos; e conduzir o estudo de legibilidade com agrônomos e
+pilotos~\cite{rodrigues2017}.
+
+%=======================================================================
+\begin{thebibliography}{00}
+
+\bibitem{mernik2005} M. Mernik, J. Heering e A. M. Sloane, ``When and how to
+develop domain-specific languages,'' \textit{ACM Computing Surveys}, vol. 37,
+n. 4, pp. 316--344, 2005.
+
+\bibitem{vandeursen2000} A. van Deursen, P. Klint e J. Visser, ``Domain-specific
+languages: an annotated bibliography,'' \textit{ACM SIGPLAN Notices}, vol. 35,
+n. 6, pp. 26--36, 2000.
+
+\bibitem{nascimento2012} L. M. do Nascimento, D. L. Viana, P. A. M. S. Neto,
+D. A. O. Martins, V. C. Garcia e S. R. L. Meira, ``A systematic mapping study on
+domain-specific languages,'' in \textit{Proc. 7th Int. Conf. on Software
+Engineering Advances (ICSEA)}, 2012, pp. 179--187.
+
+\bibitem{rodrigues2017} I. Rodrigues, M. de Borba Campos e A. F. Zorzo,
+``Usability evaluation of domain-specific languages: a systematic literature
+review,'' in \textit{Human-Computer Interaction (HCI International 2017)}, LNCS
+vol. 10271, Cham: Springer, 2017, pp. 522--534.
+
+\bibitem{boukham2025} H. Boukham, K. Younsi Dahbi e D. Chiadmi,
+``Domain-specific languages for algorithmic graph processing: a systematic
+literature review,'' \textit{Algorithms}, vol. 18, n. 7, art. 445, 2025.
+
+\bibitem{breuker2014} D. Breuker, ``Towards model-driven engineering for big data
+analytics -- an exploratory analysis of domain-specific languages for machine
+learning,'' in \textit{Proc. 47th Hawaii Int. Conf. on System Sciences (HICSS)},
+Waikoloa, HI, EUA, 2014.
+
+\bibitem{alves2022} L. Alves, J. D. Pereira, N. Aragão, M. Chagas e P. H. M.
+Maia, ``DRESS-ML: a domain-specific language for modelling exceptional scenarios
+and self-adaptive behaviours for drone-based applications,'' in \textit{Proc.
+44th Int. Conf. on Software Engineering: Software Engineering in Society (ICSE
+SEIS)}, Pittsburgh, PA, EUA, 2022, pp. 56--66.
+
+\bibitem{cheng2012} S.-W. Cheng, D. Garlan e B. Schmerl, ``Stitch: a language for
+architecture-based self-adaptation,'' \textit{Journal of Systems and Software},
+vol. 85, n. 12, pp. 2860--2875, dez. 2012, doi: 10.1016/j.jss.2012.02.060.
+
+\bibitem{aho2007} A. V. Aho, M. S. Lam, R. Sethi e J. D. Ullman,
+\textit{Compilers: Principles, Techniques, and Tools}, 2nd ed. Boston, MA, EUA:
+Pearson/Addison-Wesley, 2007.
+
+\bibitem{hopcroft2007} J. E. Hopcroft, R. Motwani e J. D. Ullman,
+\textit{Introduction to Automata Theory, Languages, and Computation}, 3rd ed.
+Boston, MA, EUA: Pearson/Addison-Wesley, 2007.
+
+\end{thebibliography}
+
+\end{document}
