@@ -415,6 +415,7 @@ results/rep1, rep2/   repetições de borda_agua com a cena versionada (D58, D60
 results/arquivo/      repetição sem reabrir a cena, mantida como evidência (D58)
 docs/decisions.md     registro numerado das decisões de projeto (D1–D60)
 docs/manual.md        manual da linguagem
+artigo/               fonte LaTeX do artigo final (IEEEtran), adicionada depois da tag v3.0
 tools/                utilitários de ambiente, calibração, CoppeliaSim e análise
 ```
 
