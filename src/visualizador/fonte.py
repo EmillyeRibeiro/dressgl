@@ -3,6 +3,9 @@
 A janela reproduz results/trace_coppelia_<hospedeiro>__<programa>__<gravacao>.jsonl,
 os mesmos arquivos que geraram metricas_coppelia.csv. A posição real vem de
 results/gravacao_<gravacao>.jsonl, casada pelo número do quadro.
+
+Com imagens=True (só no hospedeiro agroview), as superfícies são reconstruídas a
+partir dos planos gravados (render_trace). O quadro q usa o plano de q-1 (D40).
 """
 from __future__ import annotations
 
@@ -71,20 +74,33 @@ def _posicoes(gravacao: str) -> dict[int, tuple[float, ...]]:
 
 
 def quadros(gravacao: str, programa: str, hospedeiro: str = "agroview",
-            erro_pos_m: float = 0.0, semente: int = 0) -> Iterator[QuadroVisual]:
-    """Valida na chamada (e não no primeiro next) e devolve o gerador de quadros."""
+            erro_pos_m: float = 0.0, semente: int = 0,
+            imagens: bool = True) -> Iterator[QuadroVisual]:
+    """Valida na chamada (e não no primeiro next) e devolve o gerador de quadros.
+
+    imagens=True reconstrói as superfícies. Só vale no hospedeiro agroview: o
+    simulado é um modelo de custo e não desenha nada."""
     if erro_pos_m:
         raise NotImplementedError(
             "erro_pos_m > 0 exige o laço ao vivo (D62); os traces gravados são sem ruído")
     caminho = caminho_trace(gravacao, programa, hospedeiro)
     if not caminho.exists():
         raise FileNotFoundError(f"trace não encontrado: {caminho}")
-    return _gerar(caminho, _posicoes(gravacao))
+    rep = None
+    if imagens and hospedeiro == "agroview":
+        from .render_trace import reprodutor     # importa NumPy/agroview só aqui
+        rep = reprodutor(semente)
+    return _gerar(caminho, _posicoes(gravacao), rep)
 
 
-def _gerar(caminho: Path, pos: dict[int, tuple[float, ...]]) -> Iterator[QuadroVisual]:
+def _gerar(caminho: Path, pos: dict[int, tuple[float, ...]],
+           rep=None) -> Iterator[QuadroVisual]:
+    if rep is not None:
+        from .render_trace import plano_de
+    anterior: dict = {}                     # D40: o quadro q usa o plano de q-1
     for r in _linhas(caminho):
         i = int(r["quadro"])
+        imgs = rep.quadro(i, plano_de(anterior))[0] if rep is not None else {}
         yield QuadroVisual(
             indice=i,
             leituras=r["leituras"],
@@ -93,5 +109,7 @@ def _gerar(caminho: Path, pos: dict[int, tuple[float, ...]]) -> Iterator[QuadroV
             conflitos=len(r.get("conflitos", ())),
             violacoes=len(r.get("violacoes", ())),
             plano=r.get("plano", {}),
+            imagens=imgs,
             pos_real=pos.get(i),
         )
+        anterior = r.get("plano", {})

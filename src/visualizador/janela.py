@@ -97,8 +97,8 @@ class Janela:
 
     def _desenhar_campo(self):
         c = self.campo
-        # Desenhadas na ordem do TOML: a zona posterior fica por cima.
-        # ADAPTAR: confirmar com ponte_coppelia/missao.py (solo_em) que a precedência é a mesma.
+        # Desenhadas na ordem do TOML: a zona posterior fica por cima, como em
+        # Missao.solo_em (a última zona que contém o ponto vence).
         for z in self.zonas:
             x0, y0 = self._m(z["x"][0], z["y"][1])
             x1, y1 = self._m(z["x"][1], z["y"][0])
@@ -138,6 +138,7 @@ class Janela:
         self.tocando, self.acum, self.anterior, self.ant_real = False, 0.0, None, None
         self.n = self.n_acima = self.retidas = self.conflitos = self.violacoes = 0
         self.pior, self.ultima_img, self.ultimo = 0.0, {}, None
+        self.exibida = {}                  # superfície -> objeto de imagem na tela
         self.t0, self.n0 = time.perf_counter(), 0
         self.btn.configure(text="▶ tocar")
         self._eixos()
@@ -203,6 +204,9 @@ class Janela:
         if q is None:
             return
         for nome, img in self.ultima_img.items():
+            if self.exibida.get(nome) is img:      # mesma imagem do cache: nada a fazer
+                continue
+            self.exibida[nome] = img
             w, h = SUPERFICIES[nome]
             self.fotos[nome].configure(data=para_ppm(ajustar(img, h, w)), format="PPM")
             self.telas[nome].delete("aviso")
