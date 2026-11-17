@@ -24,11 +24,12 @@ uma ponte com o CoppeliaSim que fornece telemetria de voos simulados:
 | Ponte com o CoppeliaSim, missões e gravações | `src/ponte_coppelia/` |
 | Matriz de experimentos | `src/dressgl/experimentos.py`, `src/ponte_coppelia/experimentos.py` |
 
-> **Versões.** A versão entregue na disciplina está na tag
+> **Versões.** A versão descrita no artigo final está na tag
+> [`v3.0`](https://github.com/EmillyeRibeiro/dressgl/tree/v3.0): processador,
+> hospedeiro simulado, hospedeiro medido AgroView-SC, ponte com o CoppeliaSim
+> e 223 testes. A primeira entrega da disciplina está na tag
 > [`v1.0`](https://github.com/EmillyeRibeiro/dressgl/tree/v1.0): processador
 > completo, hospedeiro simulado com custo de quadro modelado e 150 testes.
-> Este README descreve a versão atual, que acrescenta o hospedeiro medido
-> AgroView-SC e a ponte com o CoppeliaSim.
 
 ## Hospedeiros
 
@@ -39,8 +40,8 @@ implementações:
 
 | Hospedeiro | Custo de quadro | Uso |
 |---|---|---|
-| Simulado (`dressgl.simulador`) | modelado, com parâmetros calibrados à mão | experimentos da `v1.0`, linha de comando |
-| AgroView-SC (`agroview`) | renderização real em CPU com NumPy (D42) | medições, experimentos com física |
+| Simulado (`dressgl.simulador`) | modelado, com parâmetros calibrados à mão | experimentos da `v1.0`, gravações do CoppeliaSim, varredura de ruído, linha de comando |
+| AgroView-SC (`agroview`) | renderização real em CPU com NumPy (D42) | medições, gravações do CoppeliaSim |
 
 O AgroView-SC renderiza três superfícies: FPV (320×180), MAP (128×128) e AGRO
 (96×96), nas resoluções com `scale = 1.0`, com 200 instâncias base de cultura.
@@ -78,14 +79,18 @@ separa o atraso da física do atraso do cooldown (D53). Ela pode ser repetida
 como cenário **sem o CoppeliaSim** (D52); por isso, os experimentos com
 física são reprodutíveis e testados.
 
-As gravações de referência (`results/gravacao_*.jsonl`) são do C4. Regravar
-`borda_agua` com `cenas/borda_agua.ttt`, reabrindo a cena antes de cada voo,
-dá sempre o mesmo arquivo, idêntico a `results/rep1/`. Esse arquivo difere
-da referência só em `pos`, por no máximo 5,0e-8 m (resíduo de float32), e
-gera o mesmo trace (D58, D60).
+As gravações de referência (`results/gravacao_*.jsonl`) foram feitas no ciclo
+C4 do desenvolvimento (commit `a7686a4`). Regravar `borda_agua` com
+`cenas/borda_agua.ttt`, reabrindo a cena antes de cada voo, dá sempre o mesmo
+arquivo, idêntico a `results/rep1/`. Esse arquivo difere da referência só em
+`pos`, por no máximo 5,0e-8 m (resíduo de float32), e gera o mesmo trace
+(D58, D60).
 
-Um ruído de percepção Gauss-Markov pode ser aplicado sobre as gravações. Ele
-altera a posição *percebida*, sem mexer na física (D56).
+Um ruído de percepção pode ser aplicado sobre as gravações (D56). Cada eixo
+(x, y) recebe um processo Gauss-Markov de 1ª ordem com desvio padrão
+estacionário `erro_pos_m` e constante de tempo `tau_s` (0,5 s nos
+experimentos), atualizado a 10 Hz e mantido entre amostras. Ele altera a
+posição *percebida*, e com ela `terrain.below`, sem mexer na física.
 
 ## Exemplo
 
@@ -166,9 +171,9 @@ python -m pytest -q
 ```
 
 Saída esperada: `222 passed, 1 deselected`. O teste deixado de fora tem o
-marcador `lento` (D59). Ele regenera `results/metricas_coppelia.csv`, leva
-cerca de 1 min e deve ser rodado antes de commitar mudanças em `results/`,
-`src/ponte_coppelia` ou `src/agroview`:
+marcador `lento` (D59). Ele regenera `results/metricas_coppelia.csv`, compara
+o resultado com a versão versionada e leva cerca de 1 min. Rode-o antes de
+commitar mudanças em `results/`, `src/ponte_coppelia` ou `src/agroview`:
 
 ```bat
 python -m pytest -q -m lento
@@ -265,8 +270,9 @@ print(l["frame_budget"], por_carga.ultimo.execucoes)
 
 `leituras(q, plano)` aplica o plano ao quadro *q*, desenha e devolve a
 telemetria com `frame_budget` e a configuração das vistas. O último quadro
-desenhado fica em `ultimo`. Um passo sem coeficiente no arquivo de calibração
-gera `ValueError`.
+desenhado fica em `ultimo`. No exemplo, o quadro 599 não redesenha o AGRO, e o
+`frame_budget` impresso fica em torno de 3,91 ms. Um passo sem coeficiente no
+arquivo de calibração gera `ValueError`.
 
 ### Calibrar o relógio por carga
 
@@ -277,8 +283,8 @@ python tools\calibrar_relogio.py
 
 Mede 540 quadros (depois de 60 de aquecimento) e grava, em
 `results/calibracao.toml`, a mediana de ms por unidade de carga de cada passo
-(D48). A calibração versionada foi feita na máquina descrita em
-`results/ambiente.json`:
+(D48). A tabela abaixo mostra esses valores convertidos para ns. A calibração
+versionada foi feita na máquina descrita em `results/ambiente.json`:
 
 | Passo | ns por unidade de carga | Amostras |
 |---|---|---|
@@ -286,8 +292,12 @@ Mede 540 quadros (depois de 60 de aquecimento) e grava, em
 | `CropInstancesPass` | 87,8 | 540 |
 | `SuitabilityPass` (AGRO) | 1,55 | 90 |
 
-Com esses coeficientes, o quadro comum (FPV + MAP) vale ≈ 3,9 ms e o quadro
-com AGRO vale ≈ 5,1 ms. Recalibre ao trocar de máquina.
+Com esses coeficientes e nenhuma regra ativa, o quadro comum (`TerrainPass`
+em FPV e MAP, mais as 200 instâncias de cultura) vale ≈ 3,9 ms. O quadro em
+que o AGRO também é redesenhado (a cada 6 quadros, a 10 Hz) vale ≈ 5,1 ms.
+Com a política de pouso ativa, o `SuitabilityPass` é sobreposto a FPV e MAP
+(D45, D47), e o pior quadro nas gravações chega a ≈ 14,2 ms. Recalibre ao
+trocar de máquina.
 
 ### Reproduzir os experimentos do artigo
 
@@ -322,8 +332,10 @@ teste `lento` confere se o resultado é idêntico ao versionado.
 python tools\varredura_ruido.py examples\missoes\margem_ruido.toml
 ```
 
-São 4 níveis de erro × 10 sementes × 2 programas (`dsl` e
-`dsl_sem_cooldown`), num total de 80 linhas em `results/varredura_ruido.csv`.
+São 4 níveis de erro (0; 0,02; 0,05 e 0,10 m) × 10 sementes × 2 programas
+(`dsl` e `dsl_sem_cooldown`), no hospedeiro simulado, num total de 80 linhas
+em `results/varredura_ruido.csv`. Os parâmetros e a hipótese foram fixados
+antes da execução (D56).
 
 ### Gravar um voo no CoppeliaSim
 
@@ -379,9 +391,12 @@ Termina com `Conflitos LL(1): nenhum, a gramática é LL(1)` (código de saída 
 | `python tools\coppeliasim_smoke.py` | testa a conexão ZeroMQ; exige o CoppeliaSim aberto |
 | `python tools\rodar_coppelia.py <programa.dgl> <missao.toml> --saida <pasta>` | grava um voo; exige o CoppeliaSim aberto |
 | `python tools\comparar_gravacoes.py <a.jsonl> <b.jsonl>` | compara duas gravações quadro a quadro e mostra a diferença máxima por campo |
+| `python tools\desenhar_zonas.py` | desenha na cena as zonas de solo da missão, só para visualização (D55) |
 
-<!-- TODO: desenhar_zonas, aplicar_percepcao, custo_injecao, custo_por_estado,
-     resumo_varredura, trocas -->
+Os demais scripts de `tools/` (`aplicar_percepcao`, `custo_injecao`,
+`custo_por_estado`, `resumo_varredura`, `trocas`) são auxiliares de análise
+usados durante o desenvolvimento e não são necessários para reproduzir as
+tabelas do artigo.
 
 ## Estrutura do repositório
 
@@ -435,13 +450,18 @@ tools/                utilitários de ambiente, calibração, CoppeliaSim e aná
   custo fixo relevante (por exemplo, `CropInstancesPass`) ficam subestimados
   quando a carga cai.
 - O `SuitabilityPass` foi calibrado só no AGRO. As variantes sobrepostas no
-  MAP e no FPV usam o mesmo coeficiente sem medição própria.
+  MAP e no FPV usam o mesmo coeficiente sem medição própria. Elas respondem
+  por cerca de 9 dos ≈ 14,2 ms do pior quadro com a política de pouso ativa,
+  e um erro de cerca de 25 % nesse coeficiente bastaria para exceder o
+  orçamento.
 - A calibração mede os passos, e não o intervalo entre eles. Por isso, o modo
   `carga` tende a ficar um pouco abaixo do modo `tempo`. A calibração vale
   para a máquina em que foi feita.
 - O hospedeiro simulado mantém o custo modelado da `v1.0`, com parâmetros
   calibrados à mão. Ele usa custo médio, e o AgroView-SC usa o custo do
-  quadro, com os picos da decimação (D43, D46).
+  quadro, com os picos da decimação (D43, D46). Por isso, reduzir o `hz` de
+  uma superfície baixa o custo médio no simulado, mas não o pior quadro no
+  AgroView-SC.
 - A bateria é modelada como linear no tempo simulado, sem relação com o
   empuxo dos motores (D51).
 - `terrain.below` vem de zonas retangulares da missão, e a classificação do
