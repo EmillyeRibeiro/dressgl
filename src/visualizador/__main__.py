@@ -14,6 +14,8 @@ def main():
     ap.add_argument("--erro-pos", type=float, default=0.0,
                     help="ainda não suportado: exige o laço ao vivo (D62)")
     ap.add_argument("--semente", type=int, default=0)
+    ap.add_argument("--sem-imagens", action="store_true",
+                    help="não reconstrói as superfícies do AgroView")
     a = ap.parse_args()
 
     if a.erro_pos:
@@ -28,16 +30,18 @@ def main():
 
     raiz = tk.Tk()
     j = Janela(raiz,
-               lambda: quadros(a.gravacao, a.programa, a.hospedeiro),
+               lambda: quadros(a.gravacao, a.programa, a.hospedeiro,
+                               imagens=not a.sem_imagens),
                int(missao["quadros"]),
                f"DRESS-GL · {a.gravacao} · {a.programa} · {a.hospedeiro}",
                zonas=missao.get("zonas", ()),
                waypoints=missao.get("waypoints", ()))
     raiz.protocol("WM_DELETE_WINDOW", j.fechar)
-        try:
-            raiz.mainloop()
-        except KeyboardInterrupt:        # Ctrl+C no console: fecha sem traceback
-            j.fechar()
+    try:
+        raiz.mainloop()
+    except KeyboardInterrupt:        # Ctrl+C no console: fecha sem traceback
+        j.fechar()
+
 
 if __name__ == "__main__":
     main()
