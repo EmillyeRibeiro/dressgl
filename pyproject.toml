@@ -12,7 +12,8 @@ dependencies = []
 dev = ["pytest>=8", "numpy>=1.26"]
 coppelia = ["coppeliasim-zmqremoteapi-client>=2.0.4"]
 render = ["numpy>=1.26"]
-gui = ["numpy>=1.26", "PySide6>=6.6"]
+# D61: janela em tkinter (biblioteca padrão); PySide6 removido.
+gui = ["numpy>=1.26"]
 
 [tool.setuptools.packages.find]
 where = ["src"]
