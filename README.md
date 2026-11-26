@@ -556,4 +556,6 @@ Compiladores.
 
 ## Licença
 
-Ainda não definida.
+O código está sob a licença MIT (ver [`LICENSE`](LICENSE)). A fonte do
+artigo (`artigo/`) não é coberta por essa licença: todos os direitos
+ficam reservados às autoras.
