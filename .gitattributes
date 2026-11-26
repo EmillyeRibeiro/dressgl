@@ -2,3 +2,4 @@
 *.toml text eol=lf
 *.md text eol=lf
 *.ttt binary
+artigo/** linguist-documentation
