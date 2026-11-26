@@ -81,7 +81,8 @@ def main(argv=None):
         w.writeheader()
         w.writerows(tabela)
     md = markdown(tabela)
-    (a.saida / "metricas.md").write_text(md + "\n", encoding="utf-8")
+    with open(a.saida / "metricas.md", "w", encoding="utf-8", newline="\n") as f:
+        f.write(md + "\n")
     print(md)
 
 
