@@ -23,8 +23,14 @@ uma ponte com o CoppeliaSim que fornece telemetria de voos simulados:
 | Hospedeiro medido AgroView-SC | `src/agroview/` |
 | Ponte com o CoppeliaSim, missões e gravações | `src/ponte_coppelia/` |
 | Matriz de experimentos | `src/dressgl/experimentos.py`, `src/ponte_coppelia/experimentos.py` |
+| Janela de reprodução de traces e replay 3D | `src/visualizador/` |
 
-> **Versões.** A versão descrita no artigo final está na tag
+> **Versões.** A versão atual está na tag
+> [`v3.1`](https://github.com/EmillyeRibeiro/dressgl/tree/v3.1): acrescenta a
+> janela de reprodução de traces e o replay 3D no CoppeliaSim
+> (`src/visualizador/`, D61–D64) e a fonte do artigo (`artigo/`), sem alterar
+> o processador, os hospedeiros nem as tabelas de `results/`; 264 testes, com os traces gerados (ver Instalação).
+> A versão descrita no artigo final está na tag
 > [`v3.0`](https://github.com/EmillyeRibeiro/dressgl/tree/v3.0): processador,
 > hospedeiro simulado, hospedeiro medido AgroView-SC, ponte com o CoppeliaSim
 > e 223 testes. A primeira entrega da disciplina está na tag
@@ -133,7 +139,7 @@ biblioteca padrão. As demais dependências são extras do `pyproject.toml`:
 | `dev` | pytest + NumPy | testes, inclusive os do AgroView-SC e a regressão lenta |
 | `render` | NumPy | renderização do AgroView-SC |
 | `coppelia` | `coppeliasim-zmqremoteapi-client` | comunicação com o CoppeliaSim aberto |
-| `gui` | NumPy + PySide6 | reservado para a janela do AgroView-SC, que ainda não existe |
+| `gui` | NumPy | janela de reprodução de traces (`python -m visualizador`), em tkinter (D61) |
 
 As versões usadas nos resultados versionados estão em
 `results/requirements-lock.txt`.
@@ -170,16 +176,30 @@ Verifique a instalação:
 python -m pytest -q
 ```
 
-Saída esperada: `222 passed, 1 deselected`. O teste deixado de fora tem o
-marcador `lento` (D59). Ele regenera `results/metricas_coppelia.csv`, compara
-o resultado com a versão versionada e leva cerca de 1 min. Rode-o antes de
-commitar mudanças em `results/`, `src/ponte_coppelia` ou `src/agroview`:
+Num clone recém-feito, a saída esperada é `230 passed, 19 skipped, 1 deselected`.
+Os testes de `tests/test_visualizador.py` e `tests/test_render_trace.py` leem
+os traces `results/trace_coppelia_*.jsonl`, que não são versionados (D38).
+Sem esses traces, eles são pulados. Para rodá-los, gere os traces (cerca de
+1 min) e repita:
+
+```bat
+python -m ponte_coppelia.experimentos --gravacoes results --saida results --hospedeiros simulado agroview
+python -m pytest -q
+```
+
+Saída esperada: `263 passed, 1 deselected`. O comando também regenera
+`results/metricas_coppelia.{csv,md}`, idênticos aos versionados. O teste
+deixado de fora tem o marcador `lento` (D59). Ele regenera
+`results/metricas_coppelia.csv`, compara o resultado com a versão versionada
+e leva cerca de 1 min. Rode-o antes de commitar mudanças em `results/`,
+`src/ponte_coppelia` ou `src/agroview`:
 
 ```bat
 python -m pytest -q -m lento
 ```
 
-Saída esperada: `1 passed, 222 deselected`.
+Saída esperada: `1 passed, 263 deselected` (ou `249 deselected`, se os traces
+ainda não tiverem sido gerados).
 
 ## Uso
 
@@ -245,7 +265,8 @@ termina com um *traceback* de `ErroCompilacao`; nesse caso, rode antes
 
 ### Usar o hospedeiro AgroView-SC a partir de Python
 
-O AgroView-SC não tem janela. Fora dos experimentos com física, ele é usado a
+O AgroView-SC não tem laço interativo: a janela de `visualizador` só reproduz
+traces gravados (D62). Fora dos experimentos com física, ele é usado a
 partir de Python. O cenário precisa apenas de uma lista `entradas`, com um
 dicionário de telemetria por quadro:
 
@@ -373,6 +394,48 @@ Comparada com a referência do C4 (`results\gravacao_borda_agua.jsonl`), a
 regravação diverge em todos os 720 quadros, mas só em `pos`, com diferença
 máxima de 5,0e-8 m. Os demais campos e o trace são iguais (D58, D60).
 
+### Reproduzir um voo na janela
+
+A janela **não executa o motor**: ela reproduz os traces gerados pelos
+experimentos (D62). O que aparece na tela é o que está em
+`results/metricas_coppelia.{csv,md}`. Os traces não são versionados (D38),
+então gere-os antes:
+
+```bat
+pip install -e ".[gui]"
+python -m ponte_coppelia.experimentos --gravacoes results --saida results --hospedeiros simulado agroview
+python -m visualizador --gravacao borda_agua --programa dsl --hospedeiro agroview
+```
+
+Opções: `--gravacao {borda_agua,pouso_agua}`,
+`--programa {dsl,baseline,dsl_sem_cooldown,multiplas}`,
+`--hospedeiro {agroview,simulado}` e `--sem-imagens` (não reconstrói as
+superfícies). `--erro-pos` e `--semente` estão reservadas: `--erro-pos > 0`
+é recusado, porque o ruído de percepção exige o laço ao vivo (D62).
+
+#### Replay 3D no CoppeliaSim
+
+Exige o CoppeliaSim aberto, a simulação **parada** e o extra `coppelia`:
+
+```bat
+pip install -e ".[coppelia]"
+python -m visualizador --coppelia --gravacao borda_agua --duas-vistas
+```
+
+O replay só posiciona o drone com o `pos` gravado: não há física nem motor,
+e nada é gravado em `results/` (D63). Câmeras: `--vista-topo`,
+`--duas-vistas`, `--seguir-drone`, `--ortografica`, `--altura-camera`
+(padrão 9 m na principal e 8 m na janela). `--fps` define a velocidade
+(padrão 30). Ao terminar (Enter), o replay remove o que criou, a menos que
+se use `--manter-rastro`. **Não salve a cena antes disso.** Se o replay for
+interrompido, rode `python -m visualizador --coppelia --restaurar-cena`.
+
+Limitações: HIGHLIGHT e MARK não são desenhados (D64); o FPV usa terreno
+sintético (D45); o `frame_budget` exibido vem do trace, não do tempo de
+desenho no Tk (D61). Durante o replay, trocar de aba de cena, usar Desfazer
+ou apagar o drone encerra o replay. Em algumas distribuições Linux, é
+preciso instalar o Tk (`python3-tk`).
+
 ### Tabela FIRST/FOLLOW e verificação LL(1)
 
 ```bat
@@ -404,6 +467,7 @@ tabelas do artigo.
 src/dressgl/          processador, contrato do hospedeiro e hospedeiro simulado
 src/agroview/         hospedeiro medido AgroView-SC (ordem dos passos, render em CPU, calibração)
 src/ponte_coppelia/   ponte com o CoppeliaSim, missões, gravações, ruído de percepção e experimentos
+src/visualizador/     janela de reprodução de traces (tkinter) e replay 3D no CoppeliaSim (D61–D63)
 tests/                testes automatizados (pytest)
 examples/             programas .dgl de exemplo
 examples/cenarios/    cenários do hospedeiro simulado (TOML)
@@ -412,8 +476,8 @@ cenas/                cenas do CoppeliaSim (.ttt)
 modelo/               modelo do hospedeiro (agroview.toml)
 results/              métricas, gravações de referência, ambiente, calibração e dependências travadas
 results/rep1, rep2/   repetições de borda_agua com a cena versionada (D58, D60)
-results/arquivo/      repetição sem reabrir a cena, mantida como evidência (D58)
-docs/decisions.md     registro numerado das decisões de projeto (D1–D60)
+results/arquivo/      dois traces antigos do hospedeiro simulado (borda_agua, pouso_agua), mantidos como evidência (D58)
+docs/decisions.md     registro numerado das decisões de projeto (D1–D64)
 docs/manual.md        manual da linguagem
 artigo/               fonte LaTeX do artigo final (IEEEtran), adicionada depois da tag v3.0
 tools/                utilitários de ambiente, calibração, CoppeliaSim e análise
@@ -446,7 +510,9 @@ tools/                utilitários de ambiente, calibração, CoppeliaSim e aná
   (D57).
 - O AgroView-SC renderiza em CPU (NumPy), não em GPU, e em resolução reduzida.
   Os tempos medidos refletem esse renderizador, não um compositor gráfico de
-  produção. O AgroView-SC também não tem janela.
+  produção.
+- A janela (`python -m visualizador`) só reproduz traces: não executa o motor
+  ao vivo nem mostra o ruído de percepção (D62).
 - O relógio por carga é linear e não tem termo fixo por passo. Passos com
   custo fixo relevante (por exemplo, `CropInstancesPass`) ficam subestimados
   quando a carga cai.
@@ -477,7 +543,7 @@ tools/                utilitários de ambiente, calibração, CoppeliaSim e aná
   versionada. Os experimentos continuam reproduzíveis porque rodam sobre
   as gravações (D52, D60).
 - Pontos de junção (`WHEN`), `HIGHLIGHT` e `MARK` são verificados e compilados,
-  mas não alteram nenhum dos dois hospedeiros.
+  mas não alteram nenhum dos dois hospedeiros nem são desenhados na janela (D64).
 - Identificadores aceitam apenas letras ASCII; não há números negativos nem
   conversão de unidades.
 

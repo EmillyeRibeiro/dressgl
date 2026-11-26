@@ -8,7 +8,7 @@
 | D4 | Comentário com `#`; enumerados em CAIXA_ALTA | Convenções léxicas; confirmada (testes de lexer e D11 dependem dela) |
 | D5 | Erro léxico gera token ERRO e a varredura continua | Relatar todos os erros de uma vez |
 | D6 | `referencia = IDENT ["." IDENT] \| alvo "." IDENT` | Aceitar `frame_budget`; continua LL(1) |
-| D7 | AgroView-SC reimplementado (PySide6/NumPy); Listagem 1 fica como ilustração do estilo imperativo | Código antigo descartado; o baseline experimental é o da D33 |
+| D7 | AgroView-SC reimplementado (NumPy; janela em tkinter, ver D41 e D61); Listagem 1 fica como ilustração do estilo imperativo | Código antigo descartado; o baseline experimental é o da D33 |
 | D8 | CoppeliaSim 4.10.0 Edu (Bullet 2.78) fornece telemetria via ZMQ (porta 23000) | Indicação do professor |
 | D9 | Modelo do hospedeiro em `modelo/agroview.toml`, lido pelo compilador e pelo host | Desacoplar a linguagem da parte gráfica |
 | D10 | Códigos V1–V8 conforme o artigo (II-D, P4); C1 e C2 são verificações complementares fora da numeração | Rastreabilidade entre artigo, código e testes |
@@ -39,10 +39,10 @@
 | D35 | Ablação `dsl_sem_cooldown`: mesmo fonte, `cooldown_frames = 0`, aplicada no script | Mede o custo/benefício do cooldown (oscilação × atraso) |
 | D36 | `multiplas_regras.dgl`: Listagem 3 + `EconomiaBateria` (PRIORITY 50), criada para exercitar D22 (conflito em `MAP.mode`) e D17 (`AGRO.hz`, `crops`) | Regra sintética; o artigo deve dizer isso |
 | D37 | `python -m dressgl.experimentos`: matriz 4 programas × 3 cenários → `results/metricas.csv`, `results/metricas.md` e `trace_<programa>__<cenario>.jsonl` | Tabela do Passo 6, que pode ser regenerada |
-| D38 | `.gitignore` ignora só `results/trace_*.jsonl`; `ambiente.json`, `requirements-lock.txt`, `smoke*.txt` e `metricas.{csv,md}` ficam versionados | Os traces se regeneram com um comando. A tabela versionada é o retrato exato dos números citados no artigo |
+| D38 | `.gitignore` ignora `results/trace_*.jsonl` e `results/percepcao/`; `ambiente.json`, `requirements-lock.txt`, `smoke*.txt`, `metricas.{csv,md}` e o resumo da D56 ficam versionados | Traces e gravações com ruído se regeneram com um comando. A tabela versionada é o retrato exato dos números citados no artigo |
 | D39 | Cliente ZMQ do CoppeliaSim passa de dependência obrigatória para o extra `coppelia` | O núcleo (compilador, motor, simulador) usa só a biblioteca padrão; README e pyproject passam a concordar |
 | D40 | `hospedeiro.Hospedeiro`: protocolo `leituras(quadro, plano) -> leituras`, já cumprido por `HospedeiroSimulado` | Contrato único para simulador, AgroView-SC e CoppeliaSim, sem mudar o comportamento de `executar` |
-| D41 | As versões anteriores do AgroView-SC (`agroview_sc.py` em `Documents\FHO…\AgroView-SC`, OpenGL 3.3) estão obsoletas e não serão reaproveitadas. Corrige a D7, escrita antes de a reimplementação existir. O novo AgroView-SC fica em `src/agroview/`, com os extras `render` (NumPy) e `gui` (NumPy + PySide6); o núcleo `dressgl` não importa `agroview`, NumPy nem PySide6 | Código antigo incompatível com o motor atual; mantém a D39, garantida por `tests/test_nucleo_sem_numpy.py` |
+| D41 | As versões anteriores do AgroView-SC (`agroview_sc.py` em `Documents\FHO…\AgroView-SC`, OpenGL 3.3) estão obsoletas e não serão reaproveitadas. Corrige a D7, escrita antes de a reimplementação existir. O novo AgroView-SC fica em `src/agroview/`, com os extras `render` (NumPy) e `gui` (NumPy + PySide6); o núcleo `dressgl` não importa `agroview`, NumPy nem PySide6. A parte sobre PySide6 foi substituída pela D61 | Código antigo incompatível com o motor atual; mantém a D39, garantida por `tests/test_nucleo_sem_numpy.py` |
 | D42 | A renderização é feita em CPU com NumPy. Cada passo informa uma carga determinística (operações por pixel), usada nos testes, e um tempo medido com `perf_counter`, usado só na calibração e nas medições | Testes reproduzíveis que não dependem da máquina. Ameaça à validade: o tempo é de CPU, não de GPU. Aguarda confirmação do professor |
 | D43 | hz no hospedeiro real é decimação, não média. Uma superfície com hz = h é desenhada inteira nos quadros em que q % round(60/h) == 0 e não é desenhada nos outros. A fase é fixa em q = 0, para ser determinística. Isso difere do D29, onde o custo é multiplicado por h/h_padrão em todo quadro | Consequência: a média pode ficar dentro do orçamento enquanto o pior_quadro_ms mostra picos. No artigo, a diferença é tratada como achado, não como erro |
 | D44 | Ordem dos passos. Passos padrão na ordem de [custo].passos_padrao, menos os SUPPRESS. Cada INJECT entra BEFORE/AFTER da sua âncora, e a âncora pode ser outro passo injetado. Com várias injeções na mesma âncora, a de maior prioridade fica mais perto dela | Uma âncora ausente (suprimida) é erro do hospedeiro (ErroOrdem) |
@@ -59,9 +59,13 @@
 | D55 | Zonas desenhadas por `tools/desenhar_zonas.py` a partir da missão (planos estáticos, não respondable); cena versionada em `cenas/agro_quadcopter.ttt` | Só visual: a zona que vale é a do TOML; o script evita divergência entre a cena e a missão |
 | D56 | Ruído de percepção Gauss-Markov sobre gravações físicas, com parâmetros e hipótese fixados antes da execução | Ver D56 em Detalhes |
 | D57 | Escopo da avaliação: um cenário excepcional (bateria em reserva sobre solo impróprio) em sete condições: operação normal, ativação com compensação, oscilação sintética, oscilação física, ruído no custo, ruído na percepção e composição de regras. Os outros cinco cenários da Seção III-A ficam como trabalho futuro | O roteiro da disciplina não fixa um número de cenários; os cinco restantes exigem telemetria que o modelo não declara |
-| D58 | Gravação de referência de borda_agua: `results/gravacao_borda_agua.jsonl`. `results/rep1` e `results/rep2` são repetições a partir da cena `cenas/borda_agua.ttt` recém-aberta; `results/arquivo` guarda uma repetição sem reabrir a cena, mantida como evidência | rep1 = rep2 (mesmo hash); diferem da referência só em `pos`, no máximo 5,0e-8 m, e geram o mesmo trace. A repetição sem reabrir a cena divergiu |
+| D58 | Gravação de referência de borda_agua: `results/gravacao_borda_agua.jsonl`. `results/rep1` e `results/rep2` são repetições a partir da cena `cenas/borda_agua.ttt` recém-aberta; `results/arquivo` guarda dois traces antigos do hospedeiro simulado (borda_agua e pouso_agua), mantidos como evidência; a gravação da repetição sem reabrir a cena não foi versionada | rep1 = rep2 (mesmo hash); diferem da referência só em `pos`, no máximo 5,0e-8 m, e geram o mesmo trace. A repetição sem reabrir a cena divergiu |
 | D59 | `numpy` entra no extra `dev` (o pacote continua sem dependências obrigatórias; o compilador e o simulador usam só a biblioteca padrão). O teste de regressão do `metricas_coppelia.csv` (~1 min) recebe o marcador `lento`, sai do `pytest -q` padrão e é pulado se faltar `numpy`. `--strict-markers` ativado | Um clone novo com `pip install -e ".[dev]"` falhou por falta de `numpy`, que só estava no `.venv` local. Rodar `python -m pytest -q -m lento` antes de commitar mudanças em `results/`, `src/ponte_coppelia` ou `src/agroview` |
 | D60 | A gravação de referência do C4 é mantida. A regravação com `cenas/borda_agua.ttt` é equivalente, mas não idêntica byte a byte; `results/rep1` passa a ser a gravação de comparação | Ver D60 em Detalhes |
+| D61 | Janela de reprodução em `tkinter` (biblioteca padrão), no pacote `src/visualizador/`. As imagens NumPy são convertidas em PPM e exibidas com `tk.PhotoImage`, sem Pillow. O extra `gui` passa a ser só NumPy. Substitui a parte da D41 sobre PySide6 | Ver D61 em Detalhes |
+| D62 | A janela reproduz os traces gerados por `ponte_coppelia.experimentos` (D54), em vez de executar o motor ao vivo (plano B). O quadro q mostra o plano calculado em q−1 (D40), e FPV, MAP e AGRO são reconstruídos a partir do plano gravado. `--erro-pos > 0` é recusado | Ver D62 em Detalhes |
+| D63 | Replay 3D no CoppeliaSim (`python -m visualizador --coppelia`), com a simulação parada: o drone é posicionado quadro a quadro com o `pos` da gravação, sem física e sem motor. Zonas, rastro e câmeras são criados pelo replay e removidos no fim | Ver D63 em Detalhes |
+| D64 | `QuadroVisual` carrega o plano do quadro, para que HIGHLIGHT e MARK possam ser desenhados sem mudar o formato do trace. Nesta versão, a janela não os desenha | HIGHLIGHT e MARK já não alteram nenhum hospedeiro (README, Limitações). Desenhá-los exige definir a geometria (por exemplo, `ARGMAX ... WITHIN 400 m` num campo de 5 m), o que fica como trabalho futuro |
 
 ## Detalhes
 
@@ -128,6 +132,7 @@ sem nenhuma semente em sentido contrário (teste do sinal unilateral: p = 0,125;
 3 ativações. `retencoes(dsl) > 0` em 30/30 sementes com ruído (faixas 4–24, 4–29, 13–38).
 A hipótese se confirma em σ = 0,05 e 0,10 m e falha em σ = 0,02 m na primeira parte (3/10 não é maioria).
 Os parâmetros não foram alterados depois dos resultados.
+
 ### D60 — Gravação de referência equivalente, mas não idêntica
 
 **Contexto.** `results/gravacao_borda_agua.jsonl` e
@@ -167,3 +172,87 @@ não com a referência.
   (`git checkout -- results/gravacao_borda_agua.jsonl`).
 - Trabalho futuro: gravar uma linha de cabeçalho com a cena, a missão e o
   commit em cada gravação. O `carregar_gravacao` teria que ignorar essa linha.
+
+### D61 — Janela em tkinter, sem PySide6
+
+**Contexto.** A D41 previa uma janela em PySide6 no extra `gui`, mas a
+`v3.0` não tem janela ("O AgroView-SC não tem janela", README). Num clone
+limpo da `v3.0`, `pip install -e ".[dev,gui,coppelia]"` baixou o PySide6
+6.12.0 com Essentials, Addons, WebEngine e Pdf (≈ 259 MB de wheels), sem
+que nenhum módulo os importasse.
+
+**Decisão.** A janela de reprodução usa `tkinter`, da biblioteca padrão.
+As superfícies (arrays NumPy RGB) são convertidas em PPM e exibidas com
+`tk.PhotoImage`, sem Pillow. O tamanho de exibição é fixo, com layout
+pensado para 1920 px a 125 %. O extra `gui` passa a instalar só NumPy.
+
+**Alternativas rejeitadas.** PySide6: dependência pesada, sem ganho para
+reproduzir imagens quadro a quadro. Pillow: uma dependência a mais só para
+converter imagens.
+
+**Consequências.**
+- O núcleo `dressgl` continua sem NumPy e sem GUI (D39, D41,
+  `tests/test_nucleo_sem_numpy.py`).
+- Em instalações de Python sem Tk (algumas distribuições Linux), é preciso
+  instalar o pacote do sistema (por exemplo, `python3-tk`).
+- A janela não mede nada: o `frame_budget` mostrado é o do trace (D62), não
+  o tempo gasto para desenhar no Tk.
+
+### D62 — Reprodução de traces gravados (plano B)
+
+**Contexto.** Havia dois caminhos: (A) executar o motor e o hospedeiro
+dentro da janela, quadro a quadro; (B) reproduzir os traces que
+`ponte_coppelia.experimentos` já gera (D54).
+
+**Decisão.** Plano B. `visualizador.fonte.quadros(gravacao, programa,
+hospedeiro, imagens)` lê a gravação e
+`results/trace_coppelia_<hospedeiro>__<programa>__<gravacao>.jsonl`.
+O quadro q mostra as superfícies do plano calculado em q−1, como no
+contrato do hospedeiro (D40). `render_trace` reconstrói FPV, MAP e AGRO
+com o renderizador do AgroView-SC a partir do plano gravado. As opções
+cobrem as duas gravações, os quatro programas da D37 e os dois hospedeiros.
+
+**Motivo.** O que a janela mostra é exatamente o que está em
+`results/metricas_coppelia.{csv,md}`. No laço ao vivo, o tempo gasto pelo
+Tk entraria no relógio `tempo` (D46) e mudaria os números.
+
+**Consequências.**
+- Os traces não são versionados (D38): é preciso rodar
+  `python -m ponte_coppelia.experimentos` antes de abrir a janela.
+- O ruído de percepção (D56) não está disponível, porque exige o laço ao
+  vivo. `--erro-pos > 0` termina com mensagem de erro.
+- A imagem do FPV é ilustrativa: o terreno é sintético (D45).
+
+### D63 — Replay 3D no CoppeliaSim
+
+**Contexto.** As gravações (D52) são só dados. Para mostrar o voo com as
+zonas e as regras ativas, é preciso reproduzi-lo na cena.
+
+**Decisão.** `python -m visualizador --coppelia` exige a simulação parada
+e o extra `coppelia`. A posição vem da gravação, e as regras ativas vêm
+do trace, pela mesma fonte da D62, sem reconstruir imagens. A cada quadro,
+`/Quadcopter` recebe o `pos` gravado com `sim.setObjectPosition`, sem
+física, sem *stepping* e sem motor, a `--fps` quadros por segundo (padrão
+30). O replay cria:
+- as zonas da missão (`Zona<i>_<SOLO>`), com nomes distintos dos da D55
+  (`zona_<i>_<solo>`), que não são tocadas;
+- o rastro do drone (*drawing object*);
+- as câmeras: `--vista-topo` (principal acima do campo), `--duas-vistas`
+  (panorâmica na principal e `DressGL_CamTopo` numa vista flutuante),
+  `--seguir-drone`, `--ortografica` e `--altura-camera`.
+
+As poses originais da câmera e do drone ficam em
+`%TEMP%\dressgl_coppelia.json`. No fim (Enter) ou com `--restaurar-cena`, o replay remove o que
+criou e restaura as poses. `--manter-rastro` deixa tudo na cena.
+
+**Consequências.**
+- O replay não produz dados nem grava nada em `results/`. Não substitui
+  um voo gravado (D58).
+- A cena não deve ser salva antes de restaurar: salvar incorpora as zonas,
+  a câmera de topo e a pose do drone. Foi assim que surgiu
+  `cena_borda_agua.ttt` (17/11, 16:26), salva em `results/` e retirada
+  de lá sem ser versionada; ela não serve para gravar voos (D58).
+- Trocar de aba de cena, usar Desfazer ou apagar o drone durante o replay
+  invalida os handles (falha observada no quadro 662). Fica como limitação conhecida, sem correção nesta versão (escopo congelado na entrega).
+- A matriz de câmera de `_olhar_para` degenera com elevação de 90°. O topo
+  usa uma orientação fixa e não passa por ela.
