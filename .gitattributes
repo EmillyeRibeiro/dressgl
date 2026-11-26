@@ -1,5 +1,6 @@
 *.jsonl text eol=lf
 *.toml text eol=lf
 *.md text eol=lf
+*.csv text eol=crlf
 *.ttt binary
 artigo/** linguist-documentation
