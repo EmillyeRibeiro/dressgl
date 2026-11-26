@@ -150,11 +150,6 @@ class Janela:
             t = self.telas[nome]
             t.delete("aviso")
             t.create_text(w // 2, h // 2, text="sem imagem", fill="gray60", tags="aviso")
-        for nome, (w, h) in SUPERFICIES.items():
-            self.fotos[nome].blank()
-            t = self.telas[nome]
-            t.delete("aviso")
-            t.create_text(w // 2, h // 2, text="sem imagem", fill="gray60", tags="aviso")
         self._passo()                      # abre (e reinicia) já mostrando o quadro 0
 
     def _alternar(self):

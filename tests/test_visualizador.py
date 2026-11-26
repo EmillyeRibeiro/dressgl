@@ -112,10 +112,10 @@ def test_janela_fumaca():
         for i in range(5)
     )
     j = Janela(raiz, falsos, 5, "teste", zonas=zonas)
-    assert j._avancar(5) and not j._avancar(1)
+    assert j._avancar(4) and not j._avancar(1)  # quadro 0 consumido na abertura (e62d0e5)
     j._mostrar()
     assert j.pior == 14.0 and j.n == 5 and j.n_acima == 0
     assert len(j.campo.find_withtag("rastro")) == 4
     j._reiniciar()
-    assert j.n == 0 and not j.campo.find_withtag("rastro")
+    assert j.n == 1 and not j.campo.find_withtag("rastro")
     j.fechar()
